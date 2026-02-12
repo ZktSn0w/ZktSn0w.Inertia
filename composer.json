@@ -1,0 +1,18 @@
+{
+    "description": "",
+    "type": "neos-package",
+    "name": "zktsn0w/inertia",
+    "require": {
+        "neos/flow": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "ZktSn0w\\Inertia\\": "Classes/"
+        }
+    },
+    "extra": {
+        "neos": {
+            "package-key": "ZktSn0w.Inertia"
+        }
+    }
+}
