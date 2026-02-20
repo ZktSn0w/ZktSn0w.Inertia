@@ -33,11 +33,6 @@ class Inertia
         if ($isInertiaRequest) {
             if (isset($assetVersion)) {
                 $headers[App::VERSION_HEADER->value] = $assetVersion;
-
-                if ($assetVersion !== $userAssetVersion && $request->getMethod() === "GET") {
-                    $status = 409;
-                    $headers[App::INERTIA_LOCATION_HEADER->value] = $request->getUri()->getPath();
-                }
             }
 
             $headers[App::HEADER->value] = true;
