@@ -15,4 +15,3 @@ ZktSn0w:
           - 'resource://Neos.Neos/Private/Fusion'
           - 'resource://Neos.Fusion.Form/Private/Fusion'
           - 'resource://ZktSn0w.Inertia/Private/Fusion'
-          - 'resource://ZktSn0w.Page/Private/Fusion'
