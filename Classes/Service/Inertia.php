@@ -15,7 +15,7 @@ class Inertia
     #[Flow\Inject()]
     protected InertiaAssetVersionService $assetVersionService;
 
-    public function render(Request $request, string $component, array $props = [], array $viewProps = [], ?FusionView $view)
+    public function render(Request $request, string $component, array $props = [], array $viewProps = [], FusionView $view)
     {
         $headers = [];
         $status = 200;
