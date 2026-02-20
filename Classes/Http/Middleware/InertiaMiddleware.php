@@ -22,7 +22,7 @@ final class InertiaMiddleware implements MiddlewareInterface
         $response = $next->handle($request);
 
         if ($request->getMethod() === 'GET' && $request->hasHeader(App::VERSION_HEADER->value) && $request->getHeader(App::VERSION_HEADER->value) !== $this->inertiaAssetVersionService->getAssetVersion()) {
-            return $response->withAddedHeader(App::LOCATION_HEADER->value, $request->getUri()->getPath());
+            return $response->withAddedHeader(App::INERTIA_LOCATION_HEADER->value, $request->getUri()->getPath());
         }
 
         if ($response->getStatusCode() === 302 && in_array($request->getMethod(), ['PUT', 'PATCH', 'DELETE'])) {

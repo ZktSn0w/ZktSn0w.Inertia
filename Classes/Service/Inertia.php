@@ -7,7 +7,6 @@ use GuzzleHttp\Psr7\Response;
 use Neos\Flow\Annotations as Flow;
 use Neos\Fusion\View\FusionView;
 use ZktSn0w\Inertia\App;
-use function Neos\Flow\var_dump;
 
 #[Flow\Scope("singleton")]
 class Inertia
@@ -16,45 +15,50 @@ class Inertia
     #[Flow\Inject()]
     protected InertiaAssetVersionService $assetVersionService;
 
-    #[Flow\InjectConfiguration(path: "rootView", package: "ZktSn0w.Inertia")]
-    protected string $viewPath;
-
     public function render(Request $request, string $component, array $props = [], array $viewProps = [], ?FusionView $view)
     {
-        $isInertiaRequest = $request->hasHeader(App::HEADER->value);
-        $userAssetVersion = $request->hasHeader(App::VERSION_HEADER->value) ? $request->getHeader(App::VERSION_HEADER->value) : null;
+        $headers = [];
+        $status = 200;
+        $body = null;
         $assetVersion = $this->assetVersionService->getAssetVersion();
-
-        if (!$assetVersion) {
-            // TODO: what should we do then?
-            return new Response(500, [], 'error');
-        }
-
         $page = [
             'component' => $component,
             'props' => $props,
             'version' => $assetVersion,
             'url' => $request->getUri()
         ];
-        $headers = [];
+        $isInertiaRequest = $request->hasHeader(App::HEADER->value);
+        $userAssetVersion = $request->hasHeader(App::VERSION_HEADER->value) ? $request->getHeader(App::VERSION_HEADER->value) : null;
 
         if ($isInertiaRequest) {
-            if ($assetVersion !== $userAssetVersion) {
-                // TODO: What now? i guess 409 with x-inertia-location header to redirect to home or something??
+            if (isset($assetVersion)) {
+                $headers[App::VERSION_HEADER->value] = $assetVersion;
+
+                if ($assetVersion !== $userAssetVersion && $request->getMethod() === "GET") {
+                    $status = 409;
+                    $headers[App::INERTIA_LOCATION_HEADER->value] = $request->getUri()->getPath();
+                }
             }
-            $headers = [
-                App::HEADER->value => true,
-                'Content-Type' => 'application/json'
-            ];
-            return new Response(headers: $headers, body: json_encode($page));
+
+            $headers[App::HEADER->value] = true;
+            $headers["VARY"] = App::HEADER->name;
+            $headers['Content-Type'] = 'application/json';
+            $body = json_encode($page);
         } else {
+            if (isset($assetVersion)) {
+                $page['version'] = $assetVersion;
+            }
+
             $view->setFusionPath('App');
             $view->assign('page', $page);
+            $view->assignMultiple($viewProps);
+
             $rendered = $view->render();
+
             $body = $rendered instanceof \Psr\Http\Message\ResponseInterface
                 ? (string) $rendered->getBody()
                 : (string) $rendered;
-            return new Response(headers: $headers, body: $body);
         }
+        return new Response(status: $status, headers: $headers, body: $body);
     }
 }

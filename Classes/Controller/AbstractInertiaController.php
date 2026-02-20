@@ -6,7 +6,6 @@ use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\View\ViewInterface;
 use Neos\Fusion\View\FusionView;
 use ZktSn0w\Inertia\Service\Inertia;
-use function Neos\Flow\var_dump;
 
 abstract class AbstractInertiaController extends ActionController
 {

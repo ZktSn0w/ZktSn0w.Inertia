@@ -1,17 +1,18 @@
 ZktSn0w:
-  Inertia:
-    assetVersioning:
-      strategy: 'FILE'
-      filePath: 'resource://Public/assetVersion'
-      # strategy: 'SETTING'
-      # version: <your-version-numberOrHash>
-
-      #strategy: 'MANIFEST' -> will get key version from file as version number
-      #filePath: '/path/to/your/manifest.json'
-    fusion:
-      fusionPathPatterns:
-        - 'resource://Neos.Fusion/Private/Fusion'
-        - 'resource://Neos.Neos/Private/Fusion'
-        - 'resource://Neos.Fusion.Form/Private/Fusion'
-        - 'resource://ZktSn0w.Inertia/Private/Fusion'
-        - 'resource://ZktSn0w.Page/Private/Fusion'
+    Inertia:
+      assetVersioning:
+        strategy:
+          class: \ZktSn0w\Inertia\Domain\AssetVersion\SettingVersionStrategy
+          options:
+            value: 'foobar'
+        # strategy:
+        #   class: \Vendor.Site\Domain\AssetVersion\MyStrategy
+        #   options:
+        #     ...
+      fusion:
+        fusionPathPatterns:
+          - 'resource://Neos.Fusion/Private/Fusion'
+          - 'resource://Neos.Neos/Private/Fusion'
+          - 'resource://Neos.Fusion.Form/Private/Fusion'
+          - 'resource://ZktSn0w.Inertia/Private/Fusion'
+          - 'resource://ZktSn0w.Page/Private/Fusion'
