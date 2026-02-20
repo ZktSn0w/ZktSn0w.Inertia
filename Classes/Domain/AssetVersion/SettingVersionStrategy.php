@@ -13,7 +13,7 @@ class SettingVersionStrategy implements StrategyInterface
 
     public function getVersion(): string
     {
-        if (empty($this->options || !isset($this->options['value']) || empty($this->options['value']))) {
+        if (empty($this->options) || !isset($this->options['value']) || empty($this->options['value'])) {
             return null;
         }
 

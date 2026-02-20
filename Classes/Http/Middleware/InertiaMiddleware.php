@@ -19,9 +19,11 @@ final class InertiaMiddleware implements MiddlewareInterface
             return $next->handle($request);
         }
 
-        $response = $next->handle($request);
 
-        if ($request->getMethod() === 'GET' && $request->hasHeader(App::VERSION_HEADER->value) && $request->getHeader(App::VERSION_HEADER->value) !== $this->inertiaAssetVersionService->getAssetVersion()) {
+        $response = $next->handle($request);
+        $response->withHeader(App::HEADER->value, 'true');
+
+        if ($request->getMethod() === 'GET' && $request->hasHeader(App::VERSION_HEADER->value) && $request->getHeaderLine(App::VERSION_HEADER->value) !== $this->inertiaAssetVersionService->getAssetVersion()) {
             return $response->withStatus(409)->withAddedHeader(App::INERTIA_LOCATION_HEADER->value, $request->getUri()->getPath());
         }
 
@@ -29,6 +31,6 @@ final class InertiaMiddleware implements MiddlewareInterface
             $response = $response->withStatus(303);
         }
 
-        return $response->withHeader('Vary', 'Accept')->withHeader(App::HEADER->value, 'true');
+        return $response->withHeader('Vary', 'Accept');
     }
 }
