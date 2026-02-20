@@ -29,6 +29,6 @@ final class InertiaMiddleware implements MiddlewareInterface
             $response = $response->withStatus(303);
         }
 
-        return $response->withHeader('Vary', 'Accept')->withHeader('X-Inertia', 'true');
+        return $response->withHeader('Vary', 'Accept')->withHeader(App::HEADER->value, 'true');
     }
 }
