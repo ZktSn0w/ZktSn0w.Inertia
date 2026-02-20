@@ -4,7 +4,7 @@ An Inertia.js server-side adapter for the Neos Flow Framework, using Fusion as t
 
 ## How It Works
 
-On the initial page load, the server responds with a full HTML document rendered through Fusion. Subsequent navigations are intercepted by the Inertia client-side library, which makes XHR requests and receives JSON responses containing the component name and props. This enables SPA-like navigation without full page reloads.
+On the initial page load, the server responds with a full HTML document rendered through Fusion. Subsequent navigations (Inertia Routes only!) are intercepted by the Inertia client-side library, which makes XHR requests and receives JSON responses containing the component name and props. This enables SPA-like navigation without full page reloads.
 
 [See the Inertia Protocol](https://inertiajs.com/docs/v2/core-concepts/the-protocol)
 
@@ -12,10 +12,27 @@ On the initial page load, the server responds with a full HTML document rendered
 The package provides:
 
 - **`AbstractInertiaController`** — Base controller that sets up the FusionView and Inertia service for your action controllers.
-- **`Inertia` service** — Renders either a full HTML page (initial visit) or a JSON response (Inertia XHR) depending on the request type.
+- **`Inertia` service** — Provides the actual render method which renders either a full HTML page (initial visit) or a JSON response (Inertia XHR) depending on the request type.
 - **`InertiaMiddleware`** — HTTP middleware that handles asset versioning checks and response status code adjustments for Inertia requests.
 - **`InertiaBody` Fusion component** — Renders the root `<div>` with the `data-page` attribute that the Inertia client-side library reads to bootstrap your frontend.
 - **`InertiaAssetVersionService`** — Manages asset versioning to trigger full page reloads when your frontend assets change.
+
+The `AbstractInertiaController` provides an injected `Inertia` Service which contains a `render` method you can call.
+```php
+public function render(Request $request, string $component, array $props = [], array $viewProps = [], FusionView $view)
+```
+
+**Method Parameters**
+`$request` -> The HTTP Request **required**
+
+`$component` -> The Frontend Component (Svelte/Vue/React/...) **required**
+
+`$props` -> All props that should be passed from the backend to the **Frontend** Component
+
+`$viewProps` -> All props that should be passed from the backend to the **Fusion** Component
+
+`$view` -> The Controllers FusionView (configured in AbstractInertiaController)
+
 
 ## Installation
 
@@ -31,19 +48,21 @@ Configure the package in your site package's `Settings.yaml` (e.g. `Configuratio
 
 ### Asset Versioning
 
-Asset versioning ensures that when your frontend assets change, Inertia triggers a full page reload instead of an XHR swap. Three strategies are available:
+Asset versioning ensures that when your frontend assets change, Inertia triggers a full page reload instead of an XHR swap.
 
-**`SETTING`** — Provide a static version string or number directly in settings:
+**`SETTING`** (default) — Provide a static version string or number directly in settings:
 
 ```yaml
 ZktSn0w:
-  Inertia:
-    assetVersioning:
-      strategy: 'SETTING'
-      version: 123
+    Inertia:
+      assetVersioning:
+        strategy:
+          class: \ZktSn0w\Inertia\Domain\AssetVersion\SettingVersionStrategy
+          options:
+            value: 'foobar'
 ```
-
-**`FILE`** — Read the version from a file (useful for CI-generated version hashes) (WIP):
+#### Coming soon...
+**`FILE`** — Read the version from a file (useful for CI-generated version hashes) **(WIP)**:
 
 ```yaml
 ZktSn0w:
@@ -51,16 +70,6 @@ ZktSn0w:
     assetVersioning:
       strategy: 'FILE'
       filePath: 'resource://Public/assetVersion'
-```
-
-**`MANIFEST`** — Read the version from a manifest file's `version` key (WIP):
-
-```yaml
-ZktSn0w:
-  Inertia:
-    assetVersioning:
-      strategy: 'MANIFEST'
-      filePath: '/path/to/your/manifest.json'
 ```
 
 ### Fusion Path Patterns
@@ -83,8 +92,7 @@ ZktSn0w:
 
 ### 1. Create a Controller
 
-Extend `AbstractInertiaController` and use the injected `$this->inertia` service to render responses. The first argument to `render()` is the HTTP request, the second is the frontend component name, and the third is the props array:
-
+Extend `AbstractInertiaController` and use the injected `$this->inertia` service to render responses.
 ```php
 <?php
 namespace Your\Package\Controller;
@@ -120,7 +128,7 @@ class ProductsController extends AbstractInertiaController
 
 ### 2. Define the Fusion App Entry Point
 
-Create a Fusion file that defines the `App` path. This is what Inertia renders as HTML on the initial full-page load. Use the `ZktSn0w.Inertia:InertiaBody` component to output the apps `<div>`:
+Create a Fusion file that defines the `App` path. This is what Inertia renders as HTML on the initial full-page load. Use the `ZktSn0w.Inertia:InertiaBody` component to output the apps `<div>` which is inertias mount point:
 
 ```fusion
 App = Your.Package:Document.Page {
