@@ -193,15 +193,3 @@ composer require zktsn0w/inertia-fusionadapter
 ```
 
 See the [FusionAdapter README](https://github.com/zktsn0w/inertia-fusionadapter) for usage.
-
----
-
-## Migration from Previous API
-
-If you used the old `AbstractInertiaController` + injectable `Inertia` service:
-
-| Old | New |
-|---|---|
-| `extends AbstractInertiaController` | `use ZktSn0w\Inertia\Trait\Inertia;` in your controller |
-| `$this->inertia->render($request, $component, $props, $viewProps, $this->view)` | `$this->inertia($component, $props, $viewProps)` |
-| `fusionPathPatterns` in `Settings.yaml` | Configure Fusion path patterns in your own site package |
