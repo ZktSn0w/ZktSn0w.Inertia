@@ -2,7 +2,7 @@
 
 ## Done
 
-- **Trait-based render** — `Trait\Inertia` with `renderInertia()` replaces the old `AbstractInertiaController` + injectable service
+- **Trait-based render** — `Trait\Inertia` with `inertia()` replaces the old `AbstractInertiaController` + injectable service
 - **`App` enum** — header constants centralized, no more magic strings
 - **`Page` domain object** — `JsonSerializable`, holds component/props/version/URL
 - **`InertiaMiddleware`** — version mismatch → 409, 302 → 303 for mutating methods, `Vary: Accept`
@@ -40,12 +40,13 @@
 
 ## Phase 2: Custom Root View
 
-Currently `renderInertia()` hardcodes `$view->setFusionPath('App')`, so every Inertia response uses the same Fusion root. This prevents different layouts per controller or multiple Inertia apps on one site.
+Goal: support different layouts per controller or multiple Inertia apps on one site. Currently `setFusionPath()` is called by the consuming controller in `initializeView()` — the trait itself has no concept of a root view. How to provide this generically is open.
 
-- [ ] **`setRootView(string $fusionPath)`** — method on the trait or a service to override the default root Fusion path
-- [ ] **Per-controller root view** — property or method on the using controller
-- [ ] **Per-render override** — optional parameter in `renderInertia()`
-- [ ] **Configurable default** — make `'App'` overridable via `Settings.yaml`
+Possible directions:
+- [ ] **Configurable default** — make the default Fusion path overridable via `Settings.yaml` so the trait can set it without controller boilerplate
+- [ ] **Per-render override** — optional `$rootView` parameter in `inertia()` for one-off overrides
+- [ ] **Per-controller property** — `$inertiaRootView` property on the using controller that the trait reads in `initializeView()`
+- [ ] **Trait method** — `setRootView(string $fusionPath)` callable before `inertia()` to change the active root for that request
 
 ---
 
