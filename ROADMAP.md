@@ -8,7 +8,6 @@
 - **`InertiaMiddleware`** — version mismatch → 409, 302 → 303 for mutating methods, `Vary: Accept`
 - **Asset versioning (all 3 strategies)** — `SettingStrategy`, `FileStrategy`, `ManifestStrategy`
 - **`StrategyInterface`** — clean extension point for custom versioning
-- **`InertiaBody` Fusion component** — renders `<div data-page="...">` mount point
 - **Neos Flow ^9.0 requirement**
 
 ---
