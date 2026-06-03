@@ -8,10 +8,3 @@ ZktSn0w:
         # strategy:
         #   class: \Vendor.Site\Domain\AssetVersion\MyStrategy
         #   options:
-        #     ...
-      fusion:
-        fusionPathPatterns:
-          - 'resource://Neos.Fusion/Private/Fusion'
-          - 'resource://Neos.Neos/Private/Fusion'
-          - 'resource://Neos.Fusion.Form/Private/Fusion'
-          - 'resource://ZktSn0w.Inertia/Private/Fusion'
