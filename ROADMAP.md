@@ -1,95 +1,73 @@
-# ZktSn0w.Inertia - Roadmap
+# ZktSn0w.Inertia — Roadmap
 
-## Phase 1: MVP - Stable & Complete Inertia Protocol
+## Done
 
-> Goal: Get the adapter fully working with all core Inertia protocol features and proper error handling.
-
-### Core Protocol
-
-- [ ] **Shared Data** - Implement `Inertia::share()` to make data available globally across all responses (auth user, flash messages, app config) without passing them in every controller action
-- [ ] **Validation Error Handling** - Automatically share server-side validation errors as props so frontend forms can display field-level errors (follow Inertia convention of passing `errors` prop) (Unsure if this is needed for a working core adapter)
-- [ ] **Flash Messages** - Support sharing session flash messages as Inertia props, so redirects with flash data work seamlessly
-- [ ] **Partial Reloads** - Support `X-Inertia-Partial-Data` and `X-Inertia-Partial-Component` headers so the client can request only specific props instead of the full page payload
-- [ ] **Lazy / Optional Props** - Allow props to be marked as lazy (closures that are only evaluated when explicitly requested via partial reload) to reduce initial page load data
-
-### Asset Versioning
-- [ ] **Setting strategy** - Finish the implementation
-- [ ] **FILE strategy** - Finish the FILE-based asset versioning strategy (currently stubbed/commented out)
-- [ ] **MANIFEST strategy** - Implement JSON manifest-based versioning (read `version` key from a manifest file)
-- [ ] **Version mismatch handling** - Respond with `409 Conflict` + `X-Inertia-Location` header when asset versions don't match, triggering a full page reload on the client
-
-### CSRF Protection
-
-- [ ] **CSRF token forwarding** - Ensure CSRF tokens from Neos Flow are available to the Inertia client (e.g. via cookie or shared data), so forms and AJAX requests include the token automatically
-- [ ] **Token mismatch handling** - On CSRF mismatch, redirect back with a flash message ("Page expired, please try again") instead of showing a raw error page
-
-### Redirects
-
-- [ ] **POST/PUT/PATCH/DELETE redirect fix** - Verify and test that `302 -> 303` status code conversion works correctly for all non-GET methods (partially implemented in middleware)
-- [ ] **External redirects** - Support `Inertia::location()` for full page visits to external URLs or non-Inertia routes
-
-### Error Handling
-
-- [ ] **Error responses** - Provide proper error page rendering for 4xx/5xx errors that works with the Inertia client (modal or dedicated error component)
-- [ ] **Development error page** - In development mode, show detailed error information; in production, show a user-friendly error page
-
-### Forms & File Uploads
-
-- [ ] **Form method spoofing** - Support `_method` field for PUT/PATCH/DELETE via POST (standard for HTML forms)
-- [ ] **Multipart file uploads** - Ensure file uploads via `multipart/form-data` work correctly through the Inertia middleware
-
-### Testing & Documentation
-
-- [ ] **Unit tests** - Test Inertia service (render, shared data, redirects), middleware (version check, status codes, headers), and asset versioning strategies
-- [ ] **Integration tests** - Test full request/response cycle for both initial page loads and subsequent XHR requests
-- [ ] **Updated README** - Document all MVP features with usage examples
+- **Trait-based render** — `Trait\Inertia` with `renderInertia()` replaces the old `AbstractInertiaController` + injectable service
+- **`App` enum** — header constants centralized, no more magic strings
+- **`Page` domain object** — `JsonSerializable`, holds component/props/version/URL
+- **`InertiaMiddleware`** — version mismatch → 409, 302 → 303 for mutating methods, `Vary: Accept`
+- **Asset versioning (all 3 strategies)** — `SettingStrategy`, `FileStrategy`, `ManifestStrategy`
+- **`StrategyInterface`** — clean extension point for custom versioning
+- **`InertiaBody` Fusion component** — renders `<div data-page="...">` mount point
+- **Neos Flow ^9.0 requirement**
 
 ---
 
-## Phase 2: Custom Root View Support
+## Phase 1: MVP — Core Protocol Completion
 
-> Goal: Allow developers to define their own root Fusion view per controller or per action, instead of being locked into a single hardcoded `App` Fusion path.
+### Shared Data
 
-### Problem
+- [ ] **`Inertia::share()`** — make data available globally across all responses (auth user, flash messages, app config) without passing them in every controller action. Store in a singleton service, merge into props on every `renderInertia()` call.
 
-Currently `Inertia::render()` hardcodes `$view->setFusionPath('App')`, meaning every Inertia response uses the same Fusion root prototype. This prevents:
-- Different layouts for different sections (admin vs. public)
-- Multiple independent Inertia apps on the same site
-- Mixing Inertia pages with traditional Fusion-rendered pages
+### Partial Reloads
 
-### Implementation
+- [ ] **Partial reload support** — handle `X-Inertia-Partial-Data` and `X-Inertia-Partial-Component` request headers. When present, filter props to only the requested keys and skip evaluating others. Prerequisite for lazy props.
+- [ ] **Lazy props** — allow props to be wrapped as closures that are only evaluated during a partial reload that explicitly requests them. Reduces initial payload size.
 
-- [ ] **`setRootView()` method** - Add `Inertia::setRootView(string $fusionPath)` to override the default root Fusion path, matching the convention from other Inertia adapters (Laravel's `Inertia::setRootView()`)
-- [ ] **Per-controller root view** - Allow setting the root view in the controller (e.g. via a property or method on `AbstractInertiaController`)
-- [ ] **Per-render root view** - Accept an optional root view parameter in `Inertia::render()` for per-action overrides
-- [ ] **Default root view config** - Make the default root Fusion path configurable via `Settings.yaml` instead of hardcoding `'App'`
-- [ ] **Documentation** - Document root view configuration with examples for multi-layout setups
+### Redirects
+
+- [ ] **`Inertia::location()`** — return a `409 Conflict` response with `X-Inertia-Location` header pointing to an external URL or non-Inertia route, triggering a full browser navigation from the client side.
+
+### Error Handling
+
+- [ ] **Error responses** — provide a way to render 4xx/5xx errors as Inertia pages (or fall back to standard Fusion error pages) rather than exposing raw PHP stack traces to Inertia clients.
+
+### Testing
+
+- [ ] **Unit tests** — middleware (header logic, version check, status codes), trait render logic (JSON vs HTML path), asset versioning strategies, `Page` serialization
+- [ ] **Integration tests** — full request/response cycle for initial loads and XHR navigations
+
+---
+
+## Phase 2: Custom Root View
+
+Currently `renderInertia()` hardcodes `$view->setFusionPath('App')`, so every Inertia response uses the same Fusion root. This prevents different layouts per controller or multiple Inertia apps on one site.
+
+- [ ] **`setRootView(string $fusionPath)`** — method on the trait or a service to override the default root Fusion path
+- [ ] **Per-controller root view** — property or method on the using controller
+- [ ] **Per-render override** — optional parameter in `renderInertia()`
+- [ ] **Configurable default** — make `'App'` overridable via `Settings.yaml`
 
 ---
 
 ## Phase 3: Server-Side Rendering (SSR)
 
-> Goal: Enable server-side rendering of Inertia pages for improved SEO, faster first paint, and better performance on slow connections.
+Render Inertia page components on the server for improved SEO and first-paint performance.
 
-### Implementation
-
-- [ ] **SSR service** - Create a service that sends the page object to a Node.js SSR server and receives the rendered HTML
-- [ ] **SSR middleware integration** - Modify the response flow to inject SSR-rendered HTML into the root `<div>` on initial page loads instead of leaving it empty for client-side hydration
-- [ ] **SSR toggle** - Allow enabling/disabling SSR via `Settings.yaml` configuration
-- [ ] **SSR head management** - Support `<Head>` component rendering so SSR can inject `<title>`, `<meta>`, and other head tags into the Fusion document head
-- [ ] **Node.js SSR server setup** - Provide a preconfigured SSR server entry point and build configuration (Vite-based)
-- [ ] **Fallback behavior** - Gracefully fall back to client-side rendering when the SSR server is unavailable
-- [ ] **Documentation** - Document SSR setup, configuration, and deployment considerations
+- [ ] **SSR service** — sends the `Page` object to a Node.js SSR server, receives rendered HTML
+- [ ] **SSR integration** — inject SSR-rendered HTML into the root `<div>` on initial page loads
+- [ ] **SSR toggle** — enable/disable via `Settings.yaml`
+- [ ] **Head management** — support `<Head>` component output so SSR can inject `<title>` and `<meta>` tags into the Fusion document head
+- [ ] **Graceful fallback** — client-side rendering when SSR server is unavailable
 
 ---
 
-## Future Considerations
+## Future (Post-Phase 3)
 
-Items that may be addressed after the initial three phases:
+Inertia v2 protocol features:
 
-- **Deferred Props** - Support `Inertia::defer()` for props that load after the initial page render (v2 feature)
-- **Merge Props** - Support `Inertia::merge()` / `deepMerge()` for infinite scroll and paginated data (v2 feature)
-- **History Encryption** - Support encrypted history state for sensitive page data (v2 feature)
-- **Prefetching** - Support link prefetching hints for faster navigation (v2 feature)
-- **Polling** - Built-in polling support for real-time data updates (v2 feature)
-- **When Visiting** - Reactive helpers for detecting active navigation (v2 feature)
+- **Deferred props** — `Inertia::defer()` — load props after initial render
+- **Merge props** — `Inertia::merge()` / `deepMerge()` — for infinite scroll and pagination
+- **History encryption** — encrypted history state for sensitive page data
+- **Prefetching** — link prefetch hints for faster navigation
+- **Polling** — built-in polling for real-time data updates
