@@ -18,7 +18,7 @@ trait Inertia
         $this->assetVersionService = $assetVersionService;
     }
 
-    private function renderInertia(string $component, array $props = [], array $viewProps = []): ResponseInterface
+    private function inertia(string $component, array $props = [], array $viewProps = []): ResponseInterface
     {
         if (!$this->request) {
             throw new \Exception('Request object is not set.');
