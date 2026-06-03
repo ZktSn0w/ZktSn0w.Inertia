@@ -2,7 +2,7 @@ ZktSn0w:
     Inertia:
       assetVersioning:
         strategy:
-          class: \ZktSn0w\Inertia\Domain\AssetVersion\SettingVersionStrategy
+          class: \ZktSn0w\Inertia\Domain\AssetVersion\SettingStrategy
           options:
             value: 'foobar'
         # strategy:
