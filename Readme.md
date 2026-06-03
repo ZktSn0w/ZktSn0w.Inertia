@@ -186,10 +186,10 @@ Initialize Inertia with a component resolver in your frontend entry point. See t
 
 ## Fusion Adapter
 
-For Fusion-based setups, the [`ZktSn0w.Inertia.FusionAdapter`](https://github.com/zktsn0w/inertia-fusionadapter) package provides the `ZktSn0w.Inertia:InertiaBody` prototype that renders the `<div data-page="...">` mount point.
+For Fusion-based setups, the [`ZktSn0w.Inertia.FusionAdapter`](https://github.com/ZktSn0w/ZktSn0w.Inertia.FusionAdapter) package provides the `ZktSn0w.Inertia:InertiaBody` prototype that renders the `<div data-page="...">` mount point.
 
 ```bash
 composer require zktsn0w/inertia-fusionadapter
 ```
 
-See the [FusionAdapter README](https://github.com/zktsn0w/inertia-fusionadapter) for usage.
+See the [FusionAdapter README](https://github.com/ZktSn0w/ZktSn0w.Inertia.FusionAdapter) for usage.
