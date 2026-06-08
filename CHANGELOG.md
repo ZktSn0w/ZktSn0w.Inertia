@@ -16,4 +16,5 @@
 - `DeferProp` — wrap slow props in a closure to exclude them from the initial response; the Inertia client fetches them in a follow-up XHR
 - `Deferrable` interface for custom deferred prop implementations
 - Partial reload support — props filtered by `X-Inertia-Partial-Data` header; deferred props grouped by name in the `Page` payload
-- `App::PARTIAL_COMPONENT
+- `App::PARTIAL_COMPONENT` and `App::PARTIAL_DATA` header constants
+
