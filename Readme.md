@@ -6,7 +6,7 @@ Works with any Flow view (`FusionView`, `TemplateView`, etc.). Render the `<div 
 
 ## Versioning
 
-This package follows [Semantic Versioning](https://semver.org/). Current version: **1.0.0**
+This package follows [Semantic Versioning](https://semver.org/). Current version: **0.1.0**
 
 | Increment | When |
 |---|---|
@@ -193,6 +193,30 @@ npm install @inertiajs/vue3
 ```
 
 Initialize Inertia with a component resolver in your frontend entry point. See the [Inertia client-side setup docs](https://inertiajs.com/docs/v2/getting-started/index).
+
+## Deferred Props
+
+Wrap slow props in `DeferProp` to exclude them from the initial response. The Inertia client fetches them in a follow-up XHR after the page renders.
+
+```php
+use ZktSn0w\Inertia\Domain\Prop\DeferProp;
+
+public function indexAction(): ResponseInterface
+{
+    return $this->inertia('Dashboard', [
+        'user'        => $this->currentUser(),                              // immediate
+        'permissions' => new DeferProp(fn() => Permission::findAll()),      // deferred
+        'teams'       => new DeferProp(fn() => Team::findAll(), 'sidebar'), // deferred, grouped
+        'invites'     => new DeferProp(fn() => Invite::findPending(), 'sidebar'),
+    ]);
+}
+```
+
+Props sharing a group name are fetched in one request. Props without a group use `"default"` and fetch alone. On the client, wrap the deferred content in `<Deferred data="propName">` with a fallback slot.
+
+See [`Documentation/05-Deferred-Props.md`](Documentation/05-Deferred-Props.md) for full reference.
+
+---
 
 ## Fusion Adapter
 
