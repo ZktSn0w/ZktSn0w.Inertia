@@ -75,7 +75,7 @@ trait Inertia
             $page->setVersion($assetVersion);
         }
 
-        $page->setUrl((string) $httpRequest->getUri());
+        $page->setUrl((string) $httpRequest->getUri()->getPath());
 
         if (!$httpRequest->hasHeader(App::HEADER->value)) {
             $this->view->assign('page', $page);
