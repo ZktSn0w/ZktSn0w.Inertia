@@ -2,13 +2,13 @@
 
 namespace ZktSn0w\Inertia\Domain;
 
-
 class Page implements \JsonSerializable
 {
     private string $component;
     private array $props;
     private ?string $version = null;
     private ?string $url = null;
+    private array $deferredProps = [];
 
     public static function create(string $component, array $props): self
     {
@@ -31,6 +31,11 @@ class Page implements \JsonSerializable
         $this->url = $url;
     }
 
+    public function setDeferredProps(array $defferedProps): void
+    {
+        $this->deferredProps = $defferedProps;
+    }
+
     public function jsonSerialize(): array
     {
         $data = [
@@ -44,6 +49,10 @@ class Page implements \JsonSerializable
 
         if ($this->url !== null) {
             $data['url'] = $this->url;
+        }
+
+        if ($this->deferredProps !== []) {
+            $data['deferredProps'] = $this->deferredProps;
         }
 
         return $data;

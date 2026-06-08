@@ -17,4 +17,14 @@ enum App: string {
      * The Location header where Inertia is supposed to redirect to.
      */
     case INERTIA_LOCATION_HEADER = "X-Inertia-Location";
+
+    /**
+     * The component name header sent on partial reloads and deferred prop fetches.
+     */
+    case PARTIAL_COMPONENT = 'X-Inertia-Partial-Component';
+
+    /**
+     * The comma-separated prop keys header sent on partial reloads and deferred prop fetches.
+     */
+    case PARTIAL_DATA      = 'X-Inertia-Partial-Data';
 }
