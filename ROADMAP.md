@@ -12,15 +12,12 @@
 - **Lazy props** — closures evaluated only when explicitly requested in a partial reload
 - **Deferred props** — `DeferProp` + `Deferrable` interface; props excluded from initial load, fetched in follow-up XHRs grouped by name
 - **Shared Data** — `SharedPropsService` (singleton), `share()` on trait, `AbstractSharedPropsMiddleware` for cross-cutting data
+- **Redirects** — standard 302 handled natively by Inertia client; `location()` returns 409 + `X-Inertia-Location` for external URLs
 - **Neos Flow ^9.0 requirement**
 
 ---
 
 ## Phase 1: MVP — Core Protocol Completion
-
-### Redirects
-
-- [ ] **`Inertia::location()`** — return a `409 Conflict` response with `X-Inertia-Location` header pointing to an external URL or non-Inertia route, triggering a full browser navigation from the client side.
 
 ### Error Handling
 

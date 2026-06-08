@@ -59,6 +59,10 @@ trait Inertia
         $this->sharedPropsService->share($properties);
     }
 
+    protected function location(string $url) {
+        return new Response(409, [App::INERTIA_LOCATION_HEADER->value => $url]);
+    }
+
     private function inertia(string $component, array $props = [], array $viewProps = []): ResponseInterface
     {
         if (!$this->request) {
