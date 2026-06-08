@@ -9,6 +9,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Neos\Flow\Annotations as Flow;
 use ZktSn0w\Inertia\App;
 use ZktSn0w\Inertia\Service\InertiaAssetVersionService;
+
 final class InertiaMiddleware implements MiddlewareInterface
 {
     #[Flow\Inject()]

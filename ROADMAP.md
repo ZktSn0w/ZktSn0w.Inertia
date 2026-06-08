@@ -8,15 +8,12 @@
 - **`InertiaMiddleware`** — version mismatch → 409, 302 → 303 for mutating methods, `Vary: Accept`
 - **Asset versioning (all 3 strategies)** — `SettingStrategy`, `FileStrategy`, `ManifestStrategy`
 - **`StrategyInterface`** — clean extension point for custom versioning
+- **Shared Data** — `SharedPropsService` (singleton), `share()` on trait, `AbstractSharedPropsMiddleware` for cross-cutting data
 - **Neos Flow ^9.0 requirement**
 
 ---
 
 ## Phase 1: MVP — Core Protocol Completion
-
-### Shared Data
-
-- [ ] **`Inertia::share()`** — make data available globally across all responses (auth user, flash messages, app config) without passing them in every controller action. Store in a singleton service, merge into props on every `renderInertia()` call.
 
 ### Partial Reloads
 

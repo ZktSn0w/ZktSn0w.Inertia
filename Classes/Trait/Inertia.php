@@ -9,18 +9,24 @@ use ZktSn0w\Inertia\App;
 use ZktSn0w\Inertia\Domain\Page;
 use ZktSn0w\Inertia\Domain\Prop\Deferrable;
 use ZktSn0w\Inertia\Service\InertiaAssetVersionService;
+use ZktSn0w\Inertia\Service\SharedPropsService;
 
 trait Inertia
 {
     private InertiaAssetVersionService $assetVersionService;
+    private SharedPropsService $sharedPropsService;
 
     public function injectAssetVersionService(InertiaAssetVersionService $assetVersionService): void
     {
         $this->assetVersionService = $assetVersionService;
     }
 
+    public function injectSharedPropsService(SharedPropsService $sharedPropsService): void
+    {
+        $this->sharedPropsService = $sharedPropsService;
+    }
 
-    private function resolveProps($props, $partialData): array
+    private function resolveProps(array $props, array $partialData): array
     {
         $resolvedProps = [];
         $deferredMap = [];
@@ -44,7 +50,13 @@ trait Inertia
             }
         }
 
+        $resolvedProps = array_merge($resolvedProps, $this->sharedPropsService->getProps());
+
         return [$resolvedProps, $deferredMap];
+    }
+
+    protected function share(array $properties) {
+        $this->sharedPropsService->share($properties);
     }
 
     private function inertia(string $component, array $props = [], array $viewProps = []): ResponseInterface

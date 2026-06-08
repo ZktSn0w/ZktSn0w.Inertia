@@ -39,10 +39,30 @@ private function inertia(
 - `\Exception` if `$this->request` is not set
 - `\Exception` if `$this->request` is not a `Neos\Flow\Mvc\ActionRequest`
 
+### `share()`
+
+```php
+protected function share(array $properties): void
+```
+
+Populates shared props that are automatically merged into every `inertia()` response within the same request. Call from middleware, `initializeAction()`, or any action — props persist across sub-actions and forwards.
+
+```php
+$this->share(['auth' => ['user' => $this->getCurrentUser()]]);
+```
+
 ### `injectAssetVersionService()`
 
 ```php
 public function injectAssetVersionService(InertiaAssetVersionService $assetVersionService): void
+```
+
+Called by Flow's DI container. Do not call manually.
+
+### `injectSharedPropsService()`
+
+```php
+public function injectSharedPropsService(SharedPropsService $sharedPropsService): void
 ```
 
 Called by Flow's DI container. Do not call manually.
@@ -72,6 +92,68 @@ public function process(
 3. If `GET` request with `X-Inertia-Version` header that doesn't match the current asset version: returns `409 Conflict` with `X-Inertia-Location: <request-path>`.
 4. If response is `302` and request method is `PUT`, `PATCH`, or `DELETE`: converts to `303 See Other`.
 5. Adds `Vary: Accept` to the response.
+
+---
+
+## `SharedPropsService`
+
+**File:** `Classes/Service/SharedPropsService.php`  
+**Namespace:** `ZktSn0w\Inertia\Service`  
+**Scope:** Flow singleton (`#[Flow\Scope('singleton')]`)
+
+Per-request bag that holds shared Inertia props. Populated by middleware or controllers via `share()`, automatically merged into every `inertia()` response.
+
+### `getProps()`
+
+```php
+public function getProps(): array
+```
+
+Returns all shared props. Called internally by the trait — you typically don't call this directly.
+
+### `share()`
+
+```php
+public function share(array $props): void
+```
+
+Merges the given props into the shared bag. Later keys with the same name overwrite earlier ones.
+
+---
+
+## `AbstractSharedPropsMiddleware`
+
+**File:** `Classes/Http/Middleware/Abstract/AbstractSharedPropsMiddleware.php`  
+**Namespace:** `ZktSn0w\Inertia\Http\Middleware\Abstract`  
+**Extends:** — *(abstract, implements `Psr\Http\Server\MiddlewareInterface`)*
+
+Base PSR-15 middleware for cross-cutting shared data. Extend this class, implement `getSharedProps()`, and register the middleware in `Settings.yaml` after `inertia`. The shared props are automatically merged into every Inertia response.
+
+```php
+final class MySharedProps extends AbstractSharedPropsMiddleware
+{
+    protected function getSharedProps(ServerRequestInterface $request): array
+    {
+        return ['auth' => ['user' => $this->someService->getCurrentUser()]];
+    }
+}
+```
+
+### `getSharedProps()`
+
+```php
+abstract protected function getSharedProps(ServerRequestInterface $request): array
+```
+
+Implement to return the array of shared props. Receives the current PSR-7 request.
+
+### `process()`
+
+```php
+public function process(ServerRequestInterface $request, RequestHandlerInterface $next): ResponseInterface
+```
+
+Calls `getSharedProps()` and feeds the result to `SharedPropsService::share()`, then delegates to the next handler. Pre-built — do not override.
 
 ---
 

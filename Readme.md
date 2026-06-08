@@ -6,7 +6,7 @@ Works with any Flow view (`FusionView`, `TemplateView`, etc.). Render the `<div 
 
 ## Versioning
 
-This package follows [Semantic Versioning](https://semver.org/). Current version: **0.1.0**
+This package follows [Semantic Versioning](https://semver.org/). Current version: **0.3.0**
 
 | Increment | When |
 |---|---|
@@ -31,6 +31,8 @@ On the initial page load, the server responds with a full HTML document rendered
 | `Inertia` Trait | `ZktSn0w\Inertia\Trait\Inertia` | Adds `inertia()` to any controller |
 | Middleware | `ZktSn0w\Inertia\Http\Middleware\InertiaMiddleware` | Asset version checks, status code fixes, headers |
 | Asset Version Service | `ZktSn0w\Inertia\Service\InertiaAssetVersionService` | Resolves the configured versioning strategy |
+| Shared Props Service | `ZktSn0w\Inertia\Service\SharedPropsService` | Per-request bag for shared Inertia props |
+| Abstract Shared Props Middleware | `ZktSn0w\Inertia\Http\Middleware\Abstract\AbstractSharedPropsMiddleware` | Base middleware for cross-cutting shared data |
 | `SettingStrategy` | `ZktSn0w\Inertia\Domain\AssetVersion\SettingStrategy` | Static version string from config |
 | `FileStrategy` | `ZktSn0w\Inertia\Domain\AssetVersion\FileStrategy` | Version read from a file |
 | `ManifestStrategy` | `ZktSn0w\Inertia\Domain\AssetVersion\ManifestStrategy` | Version from a JSON manifest file |
@@ -215,6 +217,55 @@ public function indexAction(): ResponseInterface
 Props sharing a group name are fetched in one request. Props without a group use `"default"` and fetch alone. On the client, wrap the deferred content in `<Deferred data="propName">` with a fallback slot.
 
 See [`Documentation/05-Deferred-Props.md`](Documentation/05-Deferred-Props.md) for full reference.
+
+## Shared Props
+
+Shared props are automatically merged into every `inertia()` response — no need to pass them in each controller action. Useful for auth user, flash messages, app config, etc.
+
+### Via Middleware (recommended)
+
+Extend `AbstractSharedPropsMiddleware` and register it **after** the Inertia middleware:
+
+```php
+<?php
+namespace Your\Package\Http\Middleware;
+
+use Psr\Http\Message\ServerRequestInterface;
+use ZktSn0w\Inertia\Http\Middleware\Abstract\AbstractSharedPropsMiddleware;
+
+final class MySharedProps extends AbstractSharedPropsMiddleware
+{
+    protected function getSharedProps(ServerRequestInterface $request): array
+    {
+        return [
+            'auth' => ['user' => $this->authService->getCurrentUser()],
+        ];
+    }
+}
+```
+
+```yaml
+Neos:
+  Flow:
+    http:
+      middlewares:
+        'mySharedProps':
+          position: 'after inertia'
+          middleware: 'Your\Package\Http\Middleware\MySharedProps'
+```
+
+### Via Controller
+
+Call `share()` directly — props persist across forwards and sub-actions within the same request:
+
+```php
+public function initializeAction(): void
+{
+    $this->share(['appName' => 'My App']);
+}
+```
+
+Shared props are merged after page props, so shared keys can be overridden by controller props of the same name.
 
 ---
 
