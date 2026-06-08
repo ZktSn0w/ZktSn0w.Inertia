@@ -4,6 +4,16 @@ An Inertia.js server-side adapter for the Neos Flow Framework. Build modern sing
 
 Works with any Flow view (`FusionView`, `TemplateView`, etc.). Render the `<div data-page="...">` mount point using your view of choice. The optional `ZktSn0w.Inertia.FusionAdapter` package provides an `InertiaBody` Fusion prototype for Fusion-based setups.
 
+## Versioning
+
+This package follows [Semantic Versioning](https://semver.org/). Current version: **1.0.0**
+
+| Increment | When |
+|---|---|
+| **Major** | Breaking changes in the Inertia Protocol or Neos Flow compatibility |
+| **Minor** | New Inertia or Neos Flow features |
+| **Patch** | Bug fixes |
+
 ## Requirements
 
 - `neos/flow: ^9.0`
