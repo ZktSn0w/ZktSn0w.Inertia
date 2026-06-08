@@ -20,8 +20,9 @@
 
 ### Partial Reloads
 
-- [ ] **Partial reload support** — handle `X-Inertia-Partial-Data` and `X-Inertia-Partial-Component` request headers. When present, filter props to only the requested keys and skip evaluating others. Prerequisite for lazy props.
+- [ ] **Partial reload support** — handle `X-Inertia-Partial-Data` and `X-Inertia-Partial-Component` request headers. When present, filter props to only the requested keys and skip evaluating others. Prerequisite for deferred props.
 - [ ] **Lazy props** — allow props to be wrapped as closures that are only evaluated during a partial reload that explicitly requests them. Reduces initial payload size.
+- [ ] **Deferred props** — `DeferProp` wrapper class; props excluded from initial load and fetched in follow-up partial-reload XHRs grouped by name. See `Documentation/SpecSheets/DeferredProps.md`.
 
 ### Redirects
 
@@ -66,7 +67,6 @@ Render Inertia page components on the server for improved SEO and first-paint pe
 
 Inertia v2 protocol features:
 
-- **Deferred props** — `Inertia::defer()` — load props after initial render
 - **Merge props** — `Inertia::merge()` / `deepMerge()` — for infinite scroll and pagination
 - **History encryption** — encrypted history state for sensitive page data
 - **Prefetching** — link prefetch hints for faster navigation
