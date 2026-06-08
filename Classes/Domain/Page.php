@@ -9,6 +9,7 @@ class Page implements \JsonSerializable
     private ?string $version = null;
     private ?string $url = null;
     private array $deferredProps = [];
+    private array $errors = [];
 
     public static function create(string $component, array $props): self
     {
@@ -41,6 +42,7 @@ class Page implements \JsonSerializable
         $data = [
             'component' => $this->component,
             'props' => $this->props,
+            'errors' => $this->errors !== [] ? $this->errors : new \stdClass(),
         ];
 
         if ($this->version !== null) {
