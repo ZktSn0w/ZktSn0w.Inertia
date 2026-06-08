@@ -31,9 +31,9 @@ class Page implements \JsonSerializable
         $this->url = $url;
     }
 
-    public function setDeferredProps(array $defferedProps): void
+    public function setDeferredProps(array $deferedProps): void
     {
-        $this->deferredProps = $defferedProps;
+        $this->deferredProps = $deferedProps;
     }
 
     public function jsonSerialize(): array

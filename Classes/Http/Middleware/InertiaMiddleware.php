@@ -1,6 +1,7 @@
 <?php
 namespace ZktSn0w\Inertia\Http\Middleware;
 
+use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -23,7 +24,8 @@ final class InertiaMiddleware implements MiddlewareInterface
         $response = $response->withHeader(App::HEADER->value, 'true');
 
         if ($request->getMethod() === 'GET' && $request->hasHeader(App::VERSION_HEADER->value) && $request->getHeaderLine(App::VERSION_HEADER->value) !== $this->inertiaAssetVersionService->getAssetVersion()) {
-            return $response->withStatus(409)->withAddedHeader(App::INERTIA_LOCATION_HEADER->value, $request->getUri()->getPath());
+            $response = new Response(409, [App::INERTIA_LOCATION_HEADER->value => $request->getUri()->getPath()]);
+            return $response;
         }
 
         if ($response->getStatusCode() === 302 && in_array($request->getMethod(), ['PUT', 'PATCH', 'DELETE'])) {

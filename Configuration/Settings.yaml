@@ -4,7 +4,7 @@ ZktSn0w:
         strategy:
           class: \ZktSn0w\Inertia\Domain\AssetVersion\SettingStrategy
           options:
-            value: 'foobar'
+            value: '1.0.0'
         # strategy:
         #   class: \Vendor.Site\Domain\AssetVersion\MyStrategy
         #   options:

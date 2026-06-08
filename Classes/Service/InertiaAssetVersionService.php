@@ -10,21 +10,27 @@ class InertiaAssetVersionService
     #[Flow\InjectConfiguration(path: "assetVersioning.strategy", package: "ZktSn0w.Inertia")]
     protected array $assetVersioningStrategy;
 
+    private ?StrategyInterface $strategy = null;
+
     public function getAssetVersion(): ?string
     {
         if (empty($this->assetVersioningStrategy['class'])) {
             return null;
         }
 
-        $class = $this->assetVersioningStrategy['class'];
-        $options = $this->assetVersioningStrategy['options'] ?? [];
+        if($this->strategy === null) {
+            $class = $this->assetVersioningStrategy['class'];
+            $options = $this->assetVersioningStrategy['options'] ?? [];
 
-        $strategy = new $class($options);
+            $strategy = new $class($options);
 
-        if (!($strategy instanceof StrategyInterface)) {
-            throw new \InvalidArgumentException(sprintf('"%s" does not implement StrategyInterface', $class));
+            if (!($strategy instanceof StrategyInterface)) {
+                throw new \InvalidArgumentException(sprintf('"%s" does not implement StrategyInterface', $class));
+            } else {
+                $this->strategy = $strategy;
+            }
         }
 
-        return $strategy->getVersion();
+        return $this->strategy->getVersion();
     }
 }

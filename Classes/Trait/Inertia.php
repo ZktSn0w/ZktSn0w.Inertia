@@ -50,11 +50,11 @@ trait Inertia
     private function inertia(string $component, array $props = [], array $viewProps = []): ResponseInterface
     {
         if (!$this->request) {
-            throw new \Exception('Request object is not set.');
+            throw new \RuntimeException('Request object is not set. Did you use the Inertia trait outside of an ActionController?');
         }
 
         if (!($this->request instanceof ActionRequest)) {
-            throw new \Exception('Request object is not a Neos ActionRequest.');
+            throw new \RuntimeException('Request object is not a Neos ActionRequest.');
         }
 
         $httpRequest = $this->request->getHttpRequest();
@@ -90,7 +90,6 @@ trait Inertia
         }
 
         $headers = [
-            App::HEADER->value => 'true',
             'Vary' => App::HEADER->value,
             'Content-Type' => 'application/json',
         ];
