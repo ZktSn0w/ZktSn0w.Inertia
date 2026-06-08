@@ -8,18 +8,15 @@
 - **`InertiaMiddleware`** — version mismatch → 409, 302 → 303 for mutating methods, `Vary: Accept`
 - **Asset versioning (all 3 strategies)** — `SettingStrategy`, `FileStrategy`, `ManifestStrategy`
 - **`StrategyInterface`** — clean extension point for custom versioning
+- **Partial reload support** — reads `X-Inertia-Partial-Data` / `X-Inertia-Partial-Component` headers, filters props accordingly
+- **Lazy props** — closures evaluated only when explicitly requested in a partial reload
+- **Deferred props** — `DeferProp` + `Deferrable` interface; props excluded from initial load, fetched in follow-up XHRs grouped by name
 - **Shared Data** — `SharedPropsService` (singleton), `share()` on trait, `AbstractSharedPropsMiddleware` for cross-cutting data
 - **Neos Flow ^9.0 requirement**
 
 ---
 
 ## Phase 1: MVP — Core Protocol Completion
-
-### Partial Reloads
-
-- [ ] **Partial reload support** — handle `X-Inertia-Partial-Data` and `X-Inertia-Partial-Component` request headers. When present, filter props to only the requested keys and skip evaluating others. Prerequisite for deferred props.
-- [ ] **Lazy props** — allow props to be wrapped as closures that are only evaluated during a partial reload that explicitly requests them. Reduces initial payload size.
-- [ ] **Deferred props** — `DeferProp` wrapper class; props excluded from initial load and fetched in follow-up partial-reload XHRs grouped by name. See `Documentation/SpecSheets/DeferredProps.md`.
 
 ### Redirects
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.1 — 2026-06-08
+
+### Fixed
+- Lazy props (closures) were evaluated on initial load instead of only on partial reloads that explicitly request them
+
+## 0.3.0 — 2026-06-08
+
+### Added
+- `SharedPropsService` — per-request singleton for shared Inertia props
+- `share()` method on the `Inertia` trait — populate shared props from controllers or `initializeAction()`
+- `AbstractSharedPropsMiddleware` — base PSR-15 middleware for cross-cutting shared data
+- Shared props automatically merged into every `inertia()` response
+
 ## 0.2.1 — 2026-06-08
 
 ### Fixed

@@ -40,7 +40,7 @@ trait Inertia
                     $deferredMap[$prop->group()][] = $key;
                 }
             } elseif ($prop instanceof \Closure) {
-                if (!$isPartial || in_array($key, $partialData, true)) {
+                if ($isPartial && in_array($key, $partialData, true)) {
                     $resolvedProps[$key] = $prop();
                 }
             } else {
