@@ -6,7 +6,7 @@ Works with any Flow view (`FusionView`, `TemplateView`, etc.). Render the `<div 
 
 ## Versioning
 
-This package follows [Semantic Versioning](https://semver.org/). Current version: **0.3.0**
+This package follows [Semantic Versioning](https://semver.org/). Current version: **0.3.1**
 
 | Increment | When |
 |---|---|
