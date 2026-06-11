@@ -22,7 +22,9 @@ final class InertiaMiddleware implements MiddlewareInterface
         }
 
         $response = $next->handle($request);
-        $response = $response->withHeader(App::HEADER->value, 'true');
+        $response = $response
+            ->withHeader(App::HEADER->value, 'true')
+            ->withHeader('Content-Type', 'application/json');
 
         if ($request->getMethod() === 'GET' && $request->hasHeader(App::VERSION_HEADER->value) && $request->getHeaderLine(App::VERSION_HEADER->value) !== $this->inertiaAssetVersionService->getAssetVersion()) {
             $response = new Response(409, [App::INERTIA_LOCATION_HEADER->value => $request->getUri()->getPath()]);
