@@ -17,6 +17,11 @@ ZktSn0w:
         # Disable in production to avoid leaking internals.
         showDetailedErrors: true
 
+# Register Inertia Eel helper for Fusion expressions.
+Neos:
+  Fusion:
+    defaultContext:
+      Inertia: 'ZktSn0w\Inertia\Eel\InertiaHelper'
 # Register Inertia prototypes for Neos page rendering.
 # Neos:
 #   Neos:

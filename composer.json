@@ -8,7 +8,8 @@
         { "name": "Dominik Strangas", "email": "dominik@oceanwave018.de" }
     ],
     "require": {
-        "neos/flow": "^9.0"
+        "neos/flow": "^9.0",
+        "neos/fusion": "*"
     },
     "autoload": {
         "psr-4": {

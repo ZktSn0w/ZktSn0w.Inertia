@@ -1,0 +1,3 @@
+prototype(ZktSn0w.Inertia:InertiaPage) < prototype(Neos.Neos:Page) {
+  @process.inertiaResponse = ${Inertia.isInertiaRequest(request.httpRequest) ? Json.stringify(inertiaPage) : value}
+}
