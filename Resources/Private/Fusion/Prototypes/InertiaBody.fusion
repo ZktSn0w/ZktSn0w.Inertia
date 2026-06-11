@@ -1,0 +1,25 @@
+# Renders the Inertia mount point: <div id="app" data-page="...">
+#
+# Dev places this prototype wherever they want Inertia to mount.
+#
+# Usage:
+#   body.content.main = ZktSn0w.Inertia:InertiaBody {
+#     page = ${page}
+#   }
+prototype(ZktSn0w.Inertia:InertiaBody) < prototype(Neos.Fusion:Component) {
+  @propTypes {
+    id = ${PropTypes.string}
+    page = ${PropTypes.any}
+  }
+
+  id = "app"
+  page = null
+
+  renderer = Neos.Fusion:Tag {
+    tagName = "div"
+    attributes {
+      id = ${props.id}
+      data-page = ${Json.stringify(props.page)}
+    }
+  }
+}
