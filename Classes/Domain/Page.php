@@ -32,6 +32,18 @@ class Page implements \JsonSerializable
         $this->deferredProps = $deferedProps;
     }
 
+    /**
+     * Set validation or error-bag data (Inertia error protocol).
+     *
+     * Keys map to form field names; values are arrays of error messages.
+     * An empty array serializes to {} (empty JSON object) to match
+     * what the Inertia client expects.
+     */
+    public function setErrors(array $errors): void
+    {
+        $this->errors = $errors;
+    }
+
     public function jsonSerialize(): array
     {
         $data = [

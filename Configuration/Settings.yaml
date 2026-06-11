@@ -8,3 +8,18 @@ ZktSn0w:
         # strategy:
         #   class: \Vendor.Site\Domain\AssetVersion\MyStrategy
         #   options:
+
+      errorHandling:
+        # Inertia component name to render for error pages (null = default "Error").
+        # The matching component must exist on the client side.
+        errorComponent: null
+        # When true, error responses include file, line, and stack trace.
+        # Disable in production to avoid leaking internals.
+        showDetailedErrors: true
+
+# Register Inertia prototypes for Neos page rendering.
+# Neos:
+#   Neos:
+#     fusion:
+#       autoInclude:
+#         ZktSn0w.Inertia: true

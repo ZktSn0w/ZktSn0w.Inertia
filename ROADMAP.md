@@ -21,7 +21,7 @@
 
 ### Error Handling
 
-- [ ] **Error responses** — provide a way to render 4xx/5xx errors as Inertia pages (or fall back to standard Fusion error pages) rather than exposing raw PHP stack traces to Inertia clients.
+- [x] **Error responses** — provide a way to render 4xx/5xx errors as Inertia pages (or fall back to standard Fusion error pages) rather than exposing raw PHP stack traces to Inertia clients.
 
 ### Testing
 
