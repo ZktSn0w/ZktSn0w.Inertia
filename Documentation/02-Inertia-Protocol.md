@@ -15,13 +15,14 @@ The Inertia protocol distinguishes two request types based on the presence of th
 
 ## Initial Page Load Flow
 
+### Trait API
+
 1. Browser requests a URL with no Inertia headers.
 2. `InertiaMiddleware` sees no `X-Inertia` header → passes through to the controller unchanged.
-3. Controller calls `inertia($component, $props, $viewProps)`.
-4. Trait builds a `Page` object (component, props, version, URL).
-5. Trait assigns the `Page` to the view as `page`.
-6. Any `$viewProps` are assigned to the view as additional variables.
-7. View renders the full HTML document. The mount point (`<div id="app" data-page="...">`) must be present — use `ZktSn0w.Inertia:InertiaBody` (via `ZktSn0w.Inertia.FusionAdapter`) for Fusion, or render it manually with any other view.
+3. Controller calls `inertia($component, $props)`.
+4. Trait calls `PageFactory::create()` which builds a `Page` object (component, props, version, URL, shared props).
+5. Trait assigns the `Page` to the view as `inertiaPage`.
+6. View renders the full HTML document with `InertiaBody` mount point (`<div id="app" data-page="...">`).
 8. The Inertia client library reads `data-page`, bootstraps the frontend framework, and mounts the component.
 
 ```
@@ -29,9 +30,28 @@ Browser GET /products
   → InertiaMiddleware: no X-Inertia → pass through
   → ProductsController::indexAction()
   → inertia('Products/Index', [...])
-  → Page::create('Products/Index', [...])
-  → $view->assign('page', $page)
-  → $view->render() → full HTML
+  → PageFactory::create('Products/Index', [...])
+  → $view->assign('inertiaPage', $page)
+  → returns null → FusionView renders
+  → Response 200, Content-Type: text/html
+```
+
+### Fusion API
+
+1. Browser requests a URL with no Inertia headers.
+2. `InertiaMiddleware` sees no `X-Inertia` header → passes through.
+3. Controller calls `PageFactory::create()`, assigns `Page` to view as `inertiaPage`.
+4. Fusion renders `InertiaPage` prototype (extends `Neos.Neos:Page`).
+5. `@process.inertiaResponse`: no X-Inertia header → passes through full HTML.
+6. Full Neos page renders with `InertiaBody` mount point.
+
+```
+Browser GET /rootcase/index
+  → InertiaMiddleware: no X-Inertia → pass through
+  → RootCaseController::indexAction()
+  → PageFactory::create('RootCase/Index', [...])
+  → $view->assign('inertiaPage', $page)
+  → Fusion: InertiaPage → @process passes through → full Neos HTML
   → Response 200, Content-Type: text/html
 ```
 
@@ -40,24 +60,40 @@ Browser GET /products
 ## Subsequent XHR Navigation Flow
 
 1. Inertia client intercepts a link click and sends an XHR with `X-Inertia: true` and `X-Inertia-Version: <current-asset-version>`.
-2. `InertiaMiddleware` detects `X-Inertia` header, lets the request proceed.
-3. Middleware checks version: if `X-Inertia-Version` ≠ current server version → returns `409 Conflict` with `X-Inertia-Location: <url>` header. Client performs a full page reload to that URL.
+2. `InertiaMiddleware` detects `X-Inertia` header, sets `Content-Type: application/json`.
+3. Middleware checks version: if `X-Inertia-Version` ≠ current server version → returns `409 Conflict` with `X-Inertia-Location: <url>` header.
 4. If version matches, the controller runs normally.
-5. `inertia()` detects the `X-Inertia` header on the request and returns a JSON response instead of HTML.
-6. Middleware appends `X-Inertia: true` and `Vary: Accept` to the response.
+
+### Trait API
+
+5. `inertia()` detects `X-Inertia` header and returns a JSON response directly. Fusion never runs.
 
 ```
 Inertia XHR GET /products/42
   Headers: X-Inertia: true, X-Inertia-Version: abc123
-  → InertiaMiddleware: detects Inertia request
-    → version check: abc123 == server version? → yes, continue
+  → InertiaMiddleware: Content-Type → application/json, version OK
   → ProductsController::showAction()
   → inertia('Products/Show', ['product' => ...])
-  → Page::create(...) with version + URL set
-  → json_encode($page)
+  → PageFactory::create() with version + URL
+  → returns JSON Response: {"component":"Products/Show","props":{...},"version":"abc123","url":"/products/42"}
   → Response 200, Content-Type: application/json
-    Body: {"component":"Products/Show","props":{...},"version":"abc123","url":"/products/42"}
-  → InertiaMiddleware appends X-Inertia: true, Vary: Accept
+```
+
+### Fusion API
+
+5. Controller assigns `inertiaPage` to view. Fusion runs.
+6. `InertiaPage` prototype's `@process.inertiaResponse` detects `X-Inertia` header → replaces entire HTML output with `Json.stringify(inertiaPage)`.
+
+```
+Inertia XHR GET /rootcase/index
+  Headers: X-Inertia: true, X-Inertia-Version: poaaaaa
+  → InertiaMiddleware: Content-Type → application/json, version OK
+  → RootCaseController::indexAction()
+  → PageFactory::create('RootCase/Index', [...])
+  → $view->assign('inertiaPage', $page)
+  → Fusion renders InertiaPage → @process replaces HTML with JSON
+  → Response 200, Content-Type: application/json
+    Body: {"component":"RootCase/Index","props":{...},"version":"poaaaaa","url":"/rootcase/index"}
 ```
 
 ---
@@ -73,7 +109,8 @@ process(request, next):
 
   2. response = next.handle(request)        ← let controller run
 
-  3. response.addHeader(X-Inertia, 'true')  ← mark response as Inertia
+  3. response.addHeader(X-Inertia, 'true')            ← mark response as Inertia
+     response.addHeader(Content-Type, 'application/json')  ← set JSON content type
 
   4. if GET && X-Inertia-Version header present && version != server version:
        return response.withStatus(409)
@@ -90,27 +127,39 @@ process(request, next):
 
 ---
 
-## `inertia()` Step-by-Step
+## `inertia()` (Trait API) Step-by-Step
 
 **File:** `Classes/Trait/Inertia.php`
 
 ```
-inertia(component, props, viewProps):
+inertia(component, props):
   1. assert $this->request is set and is ActionRequest
-  2. url = request.httpRequest.uri
-  3. assetVersion = InertiaAssetVersionService.getAssetVersion()
-  4. page = Page::create(component, props)
-  5. if assetVersion set: page.setVersion(assetVersion)
-  6. if url set: page.setUrl(url)
-  7. if request has X-Inertia header:
-       headers = [X-Inertia-Version: assetVersion, X-Inertia: true, Vary: X-Inertia, Content-Type: application/json]
-       body = json_encode(page)
+  2. httpRequest = request.getHttpRequest()
+  3. page = PageFactory::create(component, props, httpRequest)
+       → resolves props (closures, deferred, shared)
+       → sets version from InertiaAssetVersionService
+       → sets url from request URI
+  4. if httpRequest has X-Inertia header:
+       headers = [Content-Type: application/json, Vary: X-Inertia]
+       if page has version: headers[X-Inertia-Version] = version
+       return new Response(200, headers, json_encode(page))
      else:
-       view.assign('page', page)
-       view.assignMultiple(viewProps)
-       rendered = view.render()
-       body = (string) rendered
-  8. return new GuzzleHttp Response(200, headers, body)
+       view.assign('inertiaPage', page)
+       return null  ← FusionView renders
+```
+
+---
+## `InertiaPage` (Fusion API) Step-by-Step
+
+**File:** `Resources/Private/Fusion/Prototypes/InertiaPage.fusion`
+
+```
+InertiaPage rendering (extends Neos.Neos:Page):
+  1. Neos.Neos:Page renders full HTML (head + body)
+  2. @process.inertiaResponse runs after full render:
+       @process.inertiaResponse = ${Inertia.isInertiaRequest(request.httpRequest) ? Json.stringify(inertiaPage) : value}
+       → X-Inertia present: replaces entire output with JSON
+       → X-Inertia absent: passes through full HTML unchanged
 ```
 
 ---
@@ -155,9 +204,9 @@ Implements `JsonSerializable`. JSON output:
 
 ## `InertiaBody` Fusion Component
 
-> Provided by `ZktSn0w.Inertia.FusionAdapter`. Only relevant for Fusion-based setups.
+**File:** `Resources/Private/Fusion/Prototypes/InertiaBody.fusion`
 
-**File:** `ZktSn0w.Inertia.FusionAdapter/Resources/Private/Fusion/Content/InertiaBody.fusion`
+Built-in Fusion prototype — no separate package needed.
 
 Renders:
 ```html
@@ -166,6 +215,19 @@ Renders:
 
 Props:
 - `id` (string, default `"app"`) — the `id` attribute on the div
-- `page` (any) — the `Page` object from the controller; serialized via `Json.stringify()`
+- `page` (any, default `${inertiaPage}`) — the `Page` object; serialized via `Json.stringify()`
 
 The Inertia client reads `document.getElementById('app').dataset.page` to bootstrap.
+
+---
+## `InertiaPage` Fusion Prototype
+
+**File:** `Resources/Private/Fusion/Prototypes/InertiaPage.fusion`
+
+Extends `Neos.Neos:Page`. Renders a full Neos page for initial loads, returns JSON for XHR:
+
+```fusion
+prototype(ZktSn0w.Inertia:InertiaPage) < prototype(Neos.Neos:Page) {
+  @process.inertiaResponse = ${Inertia.isInertiaRequest(request.httpRequest) ? Json.stringify(inertiaPage) : value}
+}
+```
