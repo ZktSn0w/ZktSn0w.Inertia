@@ -6,19 +6,26 @@ use GuzzleHttp\Psr7\Response;
 use Neos\Flow\Mvc\ActionRequest;
 use Psr\Http\Message\ResponseInterface;
 use ZktSn0w\Inertia\App;
-use ZktSn0w\Inertia\Domain\Page;
-use ZktSn0w\Inertia\Domain\Prop\Deferrable;
-use ZktSn0w\Inertia\Service\InertiaAssetVersionService;
+use ZktSn0w\Inertia\Factory\PageFactory;
 use ZktSn0w\Inertia\Service\SharedPropsService;
 
+/**
+ * View-agnostic Inertia trait for controllers.
+ *
+ * Works with Fusion, Fluid, or any view engine.
+ *
+ *   // Inertia XHR → returns JSON, view never touched
+ *   // Normal request → assigns page to view, view renders normally
+ *   return $this->inertia('Dashboard', ['stats' => [...]]);
+ */
 trait Inertia
 {
-    private InertiaAssetVersionService $assetVersionService;
+    private PageFactory $pageFactory;
     private SharedPropsService $sharedPropsService;
 
-    public function injectAssetVersionService(InertiaAssetVersionService $assetVersionService): void
+    public function injectPageFactory(PageFactory $pageFactory): void
     {
-        $this->assetVersionService = $assetVersionService;
+        $this->pageFactory = $pageFactory;
     }
 
     public function injectSharedPropsService(SharedPropsService $sharedPropsService): void
@@ -26,94 +33,57 @@ trait Inertia
         $this->sharedPropsService = $sharedPropsService;
     }
 
-    private function resolveProps(array $props, array $partialData): array
+    /**
+     * Share props across all Inertia responses (e.g., from middleware or controller).
+     */
+    protected function share(array $properties): void
     {
-        $resolvedProps = [];
-        $deferredMap = [];
-        $isPartial = $partialData !== [];
-
-        foreach ($props as $key => $prop) {
-            if ($prop instanceof Deferrable && $prop->shouldDefer()) {
-                if ($isPartial && in_array($key, $partialData, true)) {
-                    $resolvedProps[$key] = $prop();
-                } else {
-                    $deferredMap[$prop->group()][] = $key;
-                }
-            } elseif ($prop instanceof \Closure) {
-                if ($isPartial && in_array($key, $partialData, true)) {
-                    $resolvedProps[$key] = $prop();
-                }
-            } else {
-                if (!$isPartial || in_array($key, $partialData, true)) {
-                    $resolvedProps[$key] = $prop;
-                }
-            }
-        }
-
-        $resolvedProps = array_merge($resolvedProps, $this->sharedPropsService->getProps());
-
-        return [$resolvedProps, $deferredMap];
-    }
-
-    protected function share(array $properties) {
         $this->sharedPropsService->share($properties);
     }
 
-    protected function location(string $url) {
+    /**
+     * Return a 409 with X-Inertia-Location header for external redirects.
+     */
+    protected function location(string $url): Response
+    {
         return new Response(409, [App::INERTIA_LOCATION_HEADER->value => $url]);
     }
 
-    private function inertia(string $component, array $props = [], array $viewProps = []): ResponseInterface
+    /**
+     * Render an Inertia response.
+     *
+     * If the request has X-Inertia header: returns JSON response (view skipped).
+     * Otherwise: assigns the page to the view and returns null (view renders).
+     *
+     * @return ResponseInterface|null  JSON response for Inertia requests, null otherwise
+     */
+    protected function inertia(string $component, array $props = []): ?ResponseInterface
     {
-        if (!$this->request) {
-            throw new \RuntimeException('Request object is not set. Did you use the Inertia trait outside of an ActionController?');
-        }
-
         if (!($this->request instanceof ActionRequest)) {
-            throw new \RuntimeException('Request object is not a Neos ActionRequest.');
+            throw new \RuntimeException(sprintf(
+                'Request object is not a Neos ActionRequest. Did you use the %s trait outside of an ActionController?',
+                __TRAIT__
+            ));
         }
 
         $httpRequest = $this->request->getHttpRequest();
-        $assetVersion = $this->assetVersionService->getAssetVersion();
-        $partialComponent = $httpRequest->getHeaderLine(App::PARTIAL_COMPONENT->value);
-        $partialData = array_filter(explode(',', $httpRequest->getHeaderLine(App::PARTIAL_DATA->value)));
-        $isPartialReload = $partialComponent === $component && $partialData !== [];
+        $page = $this->pageFactory->create($component, $props, $httpRequest);
 
-        [$resolvedProps, $deferredMap] = $this->resolveProps($props, $isPartialReload ? $partialData : []);
+        if ($httpRequest->hasHeader(App::HEADER->value)) {
+            $version = $page->jsonSerialize()['version'] ?? null;
+            $headers = [
+                'Vary' => App::HEADER->value,
+                'Content-Type' => 'application/json',
+            ];
+            if ($version !== null) {
+                $headers[App::VERSION_HEADER->value] = $version;
+            }
 
-        $page = Page::create($component, $resolvedProps);
-
-        if ($deferredMap !== []) {
-            $page->setDeferredProps($deferredMap);
+            return new Response(200, $headers, json_encode($page));
         }
 
-        if ($assetVersion !== null) {
-            $page->setVersion($assetVersion);
-        }
+        $this->view->assign('page', $page);
 
-        $page->setUrl((string) $httpRequest->getUri()->getPath());
-
-        if (!$httpRequest->hasHeader(App::HEADER->value)) {
-            $this->view->assign('page', $page);
-            $this->view->assignMultiple($viewProps);
-
-            $rendered = $this->view->render();
-            $body = $rendered instanceof ResponseInterface
-                ? (string) $rendered->getBody()
-                : (string) $rendered;
-
-            return new Response(body: $body);
-        }
-
-        $headers = [
-            'Vary' => App::HEADER->value,
-            'Content-Type' => 'application/json',
-        ];
-
-        if ($assetVersion !== null) {
-            $headers[App::VERSION_HEADER->value] = $assetVersion;
-        }
-
-        return new Response(status: 200, headers: $headers, body: json_encode($page));
+        return null;
     }
 }

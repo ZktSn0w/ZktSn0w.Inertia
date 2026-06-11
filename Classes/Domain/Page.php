@@ -11,11 +11,6 @@ class Page implements \JsonSerializable
     private array $deferredProps = [];
     private array $errors = [];
 
-    public static function create(string $component, array $props): self
-    {
-        return new self($component, $props);
-    }
-
     public function __construct(string $component, array $props)
     {
         $this->component = $component;
