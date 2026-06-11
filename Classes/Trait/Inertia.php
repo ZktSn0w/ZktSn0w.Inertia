@@ -14,8 +14,6 @@ use ZktSn0w\Inertia\Service\SharedPropsService;
  *
  * Works with Fusion, Fluid, or any view engine.
  *
- *   // Inertia XHR → returns JSON, view never touched
- *   // Normal request → assigns page to view, view renders normally
  *   return $this->inertia('Dashboard', ['stats' => [...]]);
  */
 trait Inertia
@@ -82,7 +80,7 @@ trait Inertia
             return new Response(200, $headers, json_encode($page));
         }
 
-        $this->view->assign('page', $page);
+        $this->view->assign('inertiaPage', $page);
 
         return null;
     }

@@ -2,7 +2,7 @@
 
 An Inertia.js server-side adapter for the Neos Flow Framework. Build modern single-page applications with Svelte, React, or Vue while leveraging Neos Flow for routing, controllers, and data — without building a separate API.
 
-Works with any Flow view (`FusionView`, `TemplateView`, etc.). Render the `<div data-page="...">` mount point using your view of choice. The optional `ZktSn0w.Inertia.FusionAdapter` package provides an `InertiaBody` Fusion prototype for Fusion-based setups.
+Choose your integration style: the **Trait API** for controller-centric rendering, or the **Fusion API** for Fusion-first setups with Neos CMS page rendering support. Both produce the same Inertia protocol responses — use whichever fits your architecture.
 
 ## Versioning
 
@@ -17,6 +17,7 @@ This package follows [Semantic Versioning](https://semver.org/). Current version
 ## Requirements
 
 - `neos/flow: ^9.0`
+- `neos/fusion: *` (required for Fusion API and InertiaBody prototype)
 
 ## How It Works
 
@@ -28,11 +29,16 @@ On the initial page load, the server responds with a full HTML document rendered
 
 | Component | Class | Purpose |
 |---|---|---|
-| `Inertia` Trait | `ZktSn0w\Inertia\Trait\Inertia` | Adds `inertia()` to any controller |
-| Middleware | `ZktSn0w\Inertia\Http\Middleware\InertiaMiddleware` | Asset version checks, status code fixes, headers |
+| `Inertia` Trait | `ZktSn0w\Inertia\Trait\Inertia` | Trait API: adds `inertia()` to any controller |
+| `InertiaPage` Prototype | `ZktSn0w.Inertia:InertiaPage` | Fusion API: renders Neos page, switches JSON/HTHL via `@process` |
+| `InertiaBody` Prototype | `ZktSn0w.Inertia:InertiaBody` | Fusion: renders `<div data-page="...">` mount point |
+| `PageFactory` | `ZktSn0w\Inertia\Factory\PageFactory` | Creates fully resolved `Page` objects (both APIs) |
+| `InertiaHelper` (Eel) | `ZktSn0w\Inertia\Eel\InertiaHelper` | Eel helper: `Inertia.isInertiaRequest()` for Fusion conditions |
+| Middleware | `ZktSn0w\Inertia\Http\Middleware\InertiaMiddleware` | Asset version checks, status code fixes, Content-Type |
+| Error Middleware | `ZktSn0w\Inertia\Http\Middleware\InertiaErrorMiddleware` | Catches exceptions on XHR, returns JSON errors |
 | Asset Version Service | `ZktSn0w\Inertia\Service\InertiaAssetVersionService` | Resolves the configured versioning strategy |
 | Shared Props Service | `ZktSn0w\Inertia\Service\SharedPropsService` | Per-request bag for shared Inertia props |
-| Abstract Shared Props Middleware | `ZktSn0w\Inertia\Http\Middleware\Abstract\AbstractSharedPropsMiddleware` | Base middleware for cross-cutting shared data |
+| Shared Props Middleware | `ZktSn0w\Inertia\Http\Middleware\AbstractSharedPropsMiddleware` | Base middleware for cross-cutting shared data |
 | `SettingStrategy` | `ZktSn0w\Inertia\Domain\AssetVersion\SettingStrategy` | Static version string from config |
 | `FileStrategy` | `ZktSn0w\Inertia\Domain\AssetVersion\FileStrategy` | Version read from a file |
 | `ManifestStrategy` | `ZktSn0w\Inertia\Domain\AssetVersion\ManifestStrategy` | Version from a JSON manifest file |
@@ -111,17 +117,33 @@ ZktSn0w:
 
 > **Note:** `fusionPathPatterns` are no longer configured in this package. Register Fusion path patterns in your own site package.
 
-## Usage
+## Usage — Two APIs
 
-### 1. Add the Trait to Your Controller
+This package provides two APIs for rendering Inertia responses. Both produce the same protocol output — use whichever matches your architecture.
 
-Use the `ZktSn0w\Inertia\Trait\Inertia` trait in any Flow action controller. The trait requires `$this->request` (a Neos `ActionRequest`) and `$this->view` (any `ViewInterface` implementation — `FusionView`, `TemplateView`, etc.) to be set — both are provided automatically by Neos Flow's `ActionController` base class.
+| | Trait API | Fusion API |
+|---|---|---|
+| **Style** | Controller-centric | Fusion-centric |
+| **Controller** | Uses `Inertia` trait, returns `inertia()` | Uses `PageFactory` directly, assigns `Page` to view |
+| **PageFactory** | Used internally by the trait | Used directly by controller |
+| **XHR JSON** | Trait returns JSON Response directly | `InertiaPage` prototype's `@process` replaces HTML with JSON |
+| **Initial load** | Trait returns null, FusionView renders | Fusion renders full Neos page |
+| **Best for** | Standalone controllers, simple setups | Neos CMS integration, Fusion-heavy projects |
+
+Both APIs use `PageFactory` to build `Page` objects — it's the shared core for URL detection, asset version, shared props merging, deferred prop resolution, and partial reload filtering.
+
+### Trait API
+
+Add the `Inertia` trait to any Flow action controller. Call `inertia()` in your actions — it returns JSON for XHR requests and null for initial page loads (letting your FusionView render). The trait uses `PageFactory` internally to build the `Page` object with URL, version, shared props, and deferred prop resolution.
+
+**Controller:**
 
 ```php
 <?php
 namespace Your\Package\Controller;
 
 use Neos\Flow\Mvc\Controller\ActionController;
+use Psr\Http\Message\ResponseInterface;
 use ZktSn0w\Inertia\Trait\Inertia;
 
 class ProductsController extends ActionController
@@ -130,16 +152,9 @@ class ProductsController extends ActionController
 
     public function indexAction(): ResponseInterface
     {
-        return $this->inertia('Products/Index');
-    }
-
-    public function showAction(string $id): ResponseInterface
-    {
-        return $this->inertia(
-            'Products/Show',
-            ['product' => $this->productRepository->findById($id)], // frontend props
-            ['pageTitle' => 'Product Detail']                        // view props
-        );
+        return $this->inertia('Products/Index', [
+            'greeting' => 'Hello from Inertia!',
+        ]);
     }
 }
 ```
@@ -147,39 +162,116 @@ class ProductsController extends ActionController
 **`inertia()` signature:**
 
 ```php
-inertia(string $component, array $props = [], array $viewProps = []): ResponseInterface
+inertia(string $component, array $props = []): ?ResponseInterface
 ```
 
 | Parameter | Description |
 |---|---|
 | `$component` | Frontend component name (e.g. `'Home'`, `'Dashboard'`) |
 | `$props` | Data passed to the frontend component |
-| `$viewProps` | Data passed to the view via `assignMultiple()` (server-side only, initial load only) |
 
-### 2. Render the Mount Point
-
-The Inertia client needs a `<div id="app" data-page="...">` element in the initial HTML. How you render it depends on your view:
-
-**With Fusion** — install `zktsn0w/inertia-fusionadapter` and use the `InertiaBody` prototype:
+**Fusion view** (e.g. `inertia` path):
 
 ```fusion
-App = Your.Package:Document.Page {
+inertia = Your.Package:Document.Page {
+  head.titleTag >
+  body.menu >
   body.content.main >
-  body.content.main = ZktSn0w.Inertia:InertiaBody {
-    page = ${page}
+  body.content.main = ZktSn0w.Inertia:InertiaBody
+}
+```
+
+The trait assigns the `Page` object to the view as `inertiaPage`. `InertiaBody` reads it from the Fusion context (defaults to `${inertiaPage}`).
+
+### Fusion API
+
+Use `PageFactory` in your controller to create a `Page` object, assign it to the view, and let the `InertiaPage` Fusion prototype handle the JSON/HTHL switching via its `@process` directive. No trait needed.
+
+**Controller:**
+
+```php
+<?php
+namespace Your\Package\Controller;
+
+use Neos\Flow\Mvc\Controller\ActionController;
+use Neos\Fusion\View\FusionView;
+use ZktSn0w\Inertia\Factory\PageFactory;
+use Neos\Flow\Annotations as Flow;
+
+class PageController extends ActionController
+{
+    protected $defaultViewObjectName = FusionView::class;
+
+    #[Flow\Inject]
+    protected PageFactory $pageFactory;
+
+    #[Flow\InjectConfiguration(path: "fusion.fusionPathPatterns", package: "Your.Package")]
+    protected array $fusionPathPatterns;
+
+    protected function initializeView(ViewInterface $view): void
+    {
+        if ($view instanceof FusionView) {
+            $view->setFusionPathPatterns($this->fusionPathPatterns);
+        }
+    }
+
+    public function indexAction(): void
+    {
+        $page = $this->pageFactory->create('Home', [
+            'greeting' => 'Hello from Fusion API!',
+        ], $this->request->getHttpRequest());
+
+        $this->view->assign('inertiaPage', $page);
+    }
+}
+```
+
+**Fusion** — Flow auto-resolves the Fusion path to `<PackageKey>.<ControllerName>Controller.<ActionName>`:
+
+```fusion
+Your.Package.PageController.index = ZktSn0w.Inertia:InertiaPage {
+  head {
+    stylesheets.site = afx`
+        <link rel="stylesheet" href={StaticResource.uri('Your.Package', 'Public/assets/main.css')} />`
+    javascripts.site = afx`
+        <script type="module" defer src={StaticResource.uri('Your.Package', 'Public/assets/main.js')}></script>`
+  }
+  body = ZktSn0w.Inertia:InertiaBody {
+    page = ${inertiaPage}
   }
 }
 ```
 
-**With Fluid** — render the `page` variable directly in your template:
+| Prototype | Purpose |
+|---|---|
+| `ZktSn0w.Inertia:InertiaPage` | Extends `Neos.Neos:Page`. Uses `@process.inertiaResponse` to return JSON for XHR or full HTML for initial loads |
+| `ZktSn0w.Inertia:InertiaBody` | Renders `<div id="app" data-page="...">` mount point. Defaults `page` from `${inertiaPage}` context variable |
 
-```html
-<div id="app" data-page="{page -> f:format.json()}"></div>
+**How `InertiaPage` works:**
+
+```
+Request → InertiaMiddleware (sets Content-Type) → Controller (assigns inertiaPage) → Fusion
+  ├─ X-Inertia header present → @process replaces rendered HTML with JSON.stringify(inertiaPage)
+  └─ No X-Inertia header      → @process passes through full HTML page
 ```
 
-**Any other view** — assign `page` via `$viewProps` and serialize it to `data-page` yourself.
+### Render the Mount Point
 
-### 3. Set Up the Client Side
+The Inertia client needs a `<div id="app" data-page="...">` element. Use the built-in `InertiaBody` prototype:
+
+```fusion
+body.content.main = ZktSn0w.Inertia:InertiaBody
+```
+
+`InertiaBody` defaults `page` from the `${inertiaPage}` context variable — no explicit prop needed in simple cases.
+
+**With Fluid** — serialize the Page object manually:
+
+```html
+<div id="app" data-page="{inertiaPage -> f:format.json()}"></div>
+```
+
+### Set Up the Client Side
 
 Install the Inertia client adapter for your framework:
 
@@ -269,12 +361,31 @@ Shared props are merged after page props, so shared keys can be overridden by co
 
 ---
 
-## Fusion Adapter
+## Fusion Auto-Include
 
-For Fusion-based setups, the [`ZktSn0w.Inertia.FusionAdapter`](https://github.com/ZktSn0w/ZktSn0w.Inertia.FusionAdapter) package provides the `ZktSn0w.Inertia:InertiaBody` prototype that renders the `<div data-page="...">` mount point.
+Enable Neos CMS auto-include so Inertia prototypes are available globally:
 
-```bash
-composer require zktsn0w/inertia-fusionadapter
+```yaml
+Neos:
+  Neos:
+    fusion:
+      autoInclude:
+        ZktSn0w.Inertia: true
 ```
 
-See the [FusionAdapter README](https://github.com/ZktSn0w/ZktSn0w.Inertia.FusionAdapter) for usage.
+Register middleware (both packages):
+
+```yaml
+Neos:
+  Flow:
+    http:
+      middlewares:
+        'inertiaError':
+          position: 'before inertia'
+          middleware: 'ZktSn0w\Inertia\Http\Middleware\InertiaErrorMiddleware'
+        'inertia':
+          position: 'before dispatch'
+          middleware: 'ZktSn0w\Inertia\Http\Middleware\InertiaMiddleware'
+```
+
+See [`Documentation/01-Architecture.md`](Documentation/01-Architecture.md) for the full architecture and [`Documentation/04-API-Reference.md`](Documentation/04-API-Reference.md) for all classes and prototypes.
