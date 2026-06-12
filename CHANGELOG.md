@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.0 — 2026-06-12
+
+### Breaking
+- **Inertia.js v3 protocol.** Initial page data now delivered via `<script type="application/json">` tag instead of `data-page` attribute on the mount div
+- `InertiaBody` Fusion prototype now renders both the script tag and mount div (`Neos.Fusion:Join` instead of single `Neos.Fusion:Tag`)
+- Package version jumps from 1.x to 2.x to match Inertia.js v3
+
+### Added
+- `Page::setClearHistory()` and `Page::setEncryptHistory()` — only included in JSON output when `true` (v3 protocol)
+
 ## 0.3.1 — 2026-06-08
 
 ### Fixed

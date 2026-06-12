@@ -1,6 +1,6 @@
 # Inertia Protocol Implementation
 
-Reference: [Inertia Protocol Docs](https://inertiajs.com/docs/v2/core-concepts/the-protocol)
+Reference: [Inertia Protocol Docs](https://inertiajs.com/docs/v3/core-concepts/the-protocol)
 
 ## Request Types
 
@@ -22,8 +22,8 @@ The Inertia protocol distinguishes two request types based on the presence of th
 3. Controller calls `inertia($component, $props)`.
 4. Trait calls `PageFactory::create()` which builds a `Page` object (component, props, version, URL, shared props).
 5. Trait assigns the `Page` to the view as `inertiaPage`.
-6. View renders the full HTML document with `InertiaBody` mount point (`<div id="app" data-page="...">`).
-8. The Inertia client library reads `data-page`, bootstraps the frontend framework, and mounts the component.
+6. View renders the full HTML document with `InertiaBody` mount point (`<script data-page="app" type="application/json">...</script><div id="app"></div>`).
+7. The Inertia client library reads the JSON from the script tag, bootstraps the frontend framework, and mounts the component.
 
 ```
 Browser GET /products
@@ -210,14 +210,15 @@ Built-in Fusion prototype — no separate package needed.
 
 Renders:
 ```html
-<div id="app" data-page="{JSON-encoded Page object}"></div>
+<script data-page="app" type="application/json">{JSON-encoded Page object}</script>
+<div id="app"></div>
 ```
 
 Props:
-- `id` (string, default `"app"`) — the `id` attribute on the div
+- `id` (string, default `"app"`) — the `id` attribute on the mount div and `data-page` attribute on the script tag
 - `page` (any, default `${inertiaPage}`) — the `Page` object; serialized via `Json.stringify()`
 
-The Inertia client reads `document.getElementById('app').dataset.page` to bootstrap.
+The Inertia client reads the JSON from the `<script type="application/json">` tag to bootstrap (v3 protocol).
 
 ---
 ## `InertiaPage` Fusion Prototype

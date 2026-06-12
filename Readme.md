@@ -6,9 +6,9 @@ Choose your integration style: the **Trait API** for controller-centric renderin
 
 ## Versioning
 
-This package follows [Semantic Versioning](https://semver.org/). Current version: **1.0.0**
+This package follows [Semantic Versioning](https://semver.org/). Current version: **2.0.0**
 
-> **Important:** Version 1.0 targets **Inertia.js v2** (protocol v2). This adapter is not compatible with Inertia.js v1.x clients.
+> **Important:** Version 1.x targets **Inertia.js v2** (protocol v2). Version 2.x targets **Inertia.js v3** (protocol v3). These are breaking changes — upgrade your Inertia client accordingly.
 
 | Increment | When |
 |---|---|
@@ -23,9 +23,9 @@ This package follows [Semantic Versioning](https://semver.org/). Current version
 
 ## How It Works
 
-On the initial page load, the server responds with a full HTML document rendered through your configured view (Fusion, Fluid, or any other Flow-compatible view). Subsequent navigations are intercepted by the Inertia client library, which makes XHR requests and receives JSON containing the component name and props — enabling SPA-like navigation without full page reloads.
+On the initial page load, the server responds with a full HTML document containing a `<script type="application/json">` tag with the page object, followed by a mount `<div>`. The Inertia client reads the page data and boots the frontend framework. Subsequent navigations are intercepted by the Inertia client library, which makes XHR requests and receives JSON containing the component name and props — enabling SPA-like navigation without full page reloads.
 
-[Inertia Protocol Documentation](https://inertiajs.com/docs/v2/core-concepts/the-protocol)
+[Inertia Protocol Documentation](https://inertiajs.com/docs/v3/core-concepts/the-protocol)
 
 ## Package Components
 
@@ -33,7 +33,7 @@ On the initial page load, the server responds with a full HTML document rendered
 |---|---|---|
 | `Inertia` Trait | `ZktSn0w\Inertia\Trait\Inertia` | Trait API: adds `inertia()` to any controller |
 | `InertiaPage` Prototype | `ZktSn0w.Inertia:InertiaPage` | Fusion API: renders Neos page, switches JSON/HTHL via `@process` |
-| `InertiaBody` Prototype | `ZktSn0w.Inertia:InertiaBody` | Fusion: renders `<div data-page="...">` mount point |
+| `InertiaBody` Prototype | `ZktSn0w.Inertia:InertiaBody` | Fusion: renders `<script data-page="...">` + mount `<div>` |
 | `PageFactory` | `ZktSn0w\Inertia\Factory\PageFactory` | Creates fully resolved `Page` objects (both APIs) |
 | `InertiaHelper` (Eel) | `ZktSn0w\Inertia\Eel\InertiaHelper` | Eel helper: `Inertia.isInertiaRequest()` for Fusion conditions |
 | Middleware | `ZktSn0w\Inertia\Http\Middleware\InertiaMiddleware` | Asset version checks, status code fixes, Content-Type |
@@ -247,7 +247,7 @@ Your.Package.PageController.index = ZktSn0w.Inertia:InertiaPage {
 | Prototype | Purpose |
 |---|---|
 | `ZktSn0w.Inertia:InertiaPage` | Extends `Neos.Neos:Page`. Uses `@process.inertiaResponse` to return JSON for XHR or full HTML for initial loads |
-| `ZktSn0w.Inertia:InertiaBody` | Renders `<div id="app" data-page="...">` mount point. Defaults `page` from `${inertiaPage}` context variable |
+| `ZktSn0w.Inertia:InertiaBody` | Renders `<script data-page="...">` + `<div id="app">` mount point. Defaults `page` from `${inertiaPage}` context variable |
 
 **How `InertiaPage` works:**
 
@@ -259,18 +259,25 @@ Request → InertiaMiddleware (sets Content-Type) → Controller (assigns inerti
 
 ### Render the Mount Point
 
-The Inertia client needs a `<div id="app" data-page="...">` element. Use the built-in `InertiaBody` prototype:
+The Inertia client needs a `<script type="application/json" data-page="app">` tag with the page object, followed by a mount `<div id="app">`. Use the built-in `InertiaBody` prototype:
 
 ```fusion
 body.content.main = ZktSn0w.Inertia:InertiaBody
 ```
 
+This renders (v3 protocol):
+```html
+<script data-page="app" type="application/json">{"component":"...","props":{...},...}</script>
+<div id="app"></div>
+```
+
 `InertiaBody` defaults `page` from the `${inertiaPage}` context variable — no explicit prop needed in simple cases.
 
-**With Fluid** — serialize the Page object manually:
+**With Fluid** — render the script tag and mount div manually:
 
 ```html
-<div id="app" data-page="{inertiaPage -> f:format.json()}"></div>
+<script data-page="app" type="application/json">{inertiaPage -> f:format.json()}</script>
+<div id="app"></div>
 ```
 
 ### Set Up the Client Side
@@ -279,16 +286,16 @@ Install the Inertia client adapter for your framework:
 
 ```bash
 # Svelte
-npm install @inertiajs/svelte
+npm install @inertiajs/svelte@^3.0
 
 # React
-npm install @inertiajs/react
+npm install @inertiajs/react@^3.0
 
 # Vue
-npm install @inertiajs/vue3
+npm install @inertiajs/vue3@^3.0
 ```
 
-Initialize Inertia with a component resolver in your frontend entry point. See the [Inertia client-side setup docs](https://inertiajs.com/docs/v2/getting-started/index).
+Initialize Inertia with a component resolver in your frontend entry point. See the [Inertia client-side setup docs](https://inertiajs.com/docs/v3/getting-started/index).
 
 ## Deferred Props
 

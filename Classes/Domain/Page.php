@@ -10,6 +10,8 @@ class Page implements \JsonSerializable
     private ?string $url = null;
     private array $deferredProps = [];
     private array $errors = [];
+    private bool $clearHistory = false;
+    private bool $encryptHistory = false;
 
     public function __construct(string $component, array $props)
     {
@@ -30,6 +32,16 @@ class Page implements \JsonSerializable
     public function setDeferredProps(array $deferedProps): void
     {
         $this->deferredProps = $deferedProps;
+    }
+
+    public function setClearHistory(bool $clearHistory): void
+    {
+        $this->clearHistory = $clearHistory;
+    }
+
+    public function setEncryptHistory(bool $encryptHistory): void
+    {
+        $this->encryptHistory = $encryptHistory;
     }
 
     /**
@@ -62,6 +74,14 @@ class Page implements \JsonSerializable
 
         if ($this->deferredProps !== []) {
             $data['deferredProps'] = $this->deferredProps;
+        }
+
+        if ($this->clearHistory) {
+            $data['clearHistory'] = true;
+        }
+
+        if ($this->encryptHistory) {
+            $data['encryptHistory'] = true;
         }
 
         return $data;

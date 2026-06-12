@@ -37,7 +37,7 @@ ZktSn0w.Inertia/
         └── Fusion/
             ├── Root.fusion                      # root.isInertiaRequest condition
             └── Prototypes/
-                ├── InertiaBody.fusion            # <div data-page="..."> mount point
+                ├── InertiaBody.fusion            # <script data-page="..."> + mount <div>
                 └── InertiaPage.fusion            # Fusion API: Neos page + JSON switching
 ```
 
@@ -60,7 +60,7 @@ Controller (user code)
 
 FusionView (initial load only)
   └── renders InertiaBody prototype
-        └── <div id="app" data-page="{Json.stringify(page)}">
+        └── <script data-page="app" type="application/json">{Json.stringify(page)}</script><div id="app">
 ```
 
 ### Fusion API Path
@@ -78,7 +78,7 @@ Fusion (InertiaPage prototype)
   │     ├── X-Inertia header present → Json.stringify(inertiaPage)
   │     └── no X-Inertia header → pass through full HTML
   └── body = InertiaBody { page = ${inertiaPage} }
-        └── <div id="app" data-page="{Json.stringify(page)}">
+        └── <script data-page="app" type="application/json">{Json.stringify(page)}</script><div id="app">
 ```
 
 ### Middleware Chain
@@ -148,7 +148,7 @@ Both the Trait API and Fusion API use `PageFactory::create()` to build `Page` ob
 `App::HEADER`, `App::VERSION_HEADER`, and `App::INERTIA_LOCATION_HEADER` centralize all Inertia protocol header strings. Prevents typos and makes header usage grep-able.
 
 **`Page` as a value object**
-`Domain\Page` is constructed with component + props and implements `JsonSerializable`. It is the single source of truth for the data structure passed both to the JSON response (XHR) and to the Fusion view (initial load via `data-page` attribute).
+`Domain\Page` is constructed with component + props and implements `JsonSerializable`. It is the single source of truth for the data structure passed both to the JSON response (XHR) and to the Fusion view (initial load via `<script type="application/json">` tag, v3 protocol).
 
 **Error handling via middleware**
 `InertiaErrorMiddleware` wraps the entire request in try/catch. On Inertia XHR requests, exceptions are converted to JSON error responses with proper status codes. Non-Inertia requests pass through to Flow's default error handler. This prevents raw PHP stack traces from reaching the Inertia client.

@@ -278,6 +278,22 @@ public function setDeferredProps(array $deferredProps): void
 
 Sets the deferred props map. Each entry is a group name → array of prop keys.
 
+### `setClearHistory()`
+
+```php
+public function setClearHistory(bool $clearHistory): void
+```
+
+Sets whether to clear the browser history entry. Only included in JSON output when `true` (v3 protocol).
+
+### `setEncryptHistory()`
+
+```php
+public function setEncryptHistory(bool $encryptHistory): void
+```
+
+Sets whether to encrypt the history entry. Only included in JSON output when `true` (v3 protocol).
+
 ### `jsonSerialize()`
 
 ```php
@@ -297,7 +313,23 @@ Returns the array used by `json_encode()`:
 }
 ```
 
-`version`, `url`, and `deferredProps` keys are omitted if not set. `errors` defaults to `{}` (empty JSON object).
+`version`, `url`, and `deferredProps` keys are omitted if not set. `errors` defaults to `{}` (empty JSON object). `clearHistory` and `encryptHistory` are only included when `true` (v3 protocol).
+
+### `setClearHistory()`
+
+```php
+public function setClearHistory(bool $clearHistory): void
+```
+
+Sets whether to clear the browser history entry. Only included in JSON output when `true`.
+
+### `setEncryptHistory()`
+
+```php
+public function setEncryptHistory(bool $encryptHistory): void
+```
+
+Sets whether to encrypt the history entry. Only included in JSON output when `true`.
 
 ---
 
@@ -400,18 +432,23 @@ Your.Package.PageController.index = ZktSn0w.Inertia:InertiaPage {
 **File:** `Resources/Private/Fusion/Prototypes/InertiaBody.fusion`  
 **Extends:** `Neos.Fusion:Component`
 
-Built-in Fusion prototype — no separate package needed. Renders the Inertia mount point.
+Built-in Fusion prototype — no separate package needed. Renders the Inertia mount point (v3 protocol).
 
 ```fusion
 prototype(ZktSn0w.Inertia:InertiaBody) < prototype(Neos.Fusion:Component) {
   id = "app"
   page = ${inertiaPage}
 
-  renderer = Neos.Fusion:Tag {
-    tagName = "div"
-    attributes {
-      id = ${props.id}
-      data-page = ${Json.stringify(props.page)}
+  renderer = Neos.Fusion:Join {
+    pageDataScript = Neos.Fusion:Tag {
+      tagName = "script"
+      attributes.data-page = ${props.id}
+      attributes.type = "application/json"
+      content = ${Json.stringify(props.page)}
+    }
+    appMountDiv = Neos.Fusion:Tag {
+      tagName = "div"
+      attributes.id = ${props.id}
     }
   }
 }
@@ -421,8 +458,8 @@ prototype(ZktSn0w.Inertia:InertiaBody) < prototype(Neos.Fusion:Component) {
 
 | Prop | Type | Default | Description |
 |---|---|---|---|
-| `id` | `string` | `"app"` | HTML `id` attribute on the div |
-| `page` | `any` | `${inertiaPage}` | The `Page` object; JSON-serialized into `data-page`. Defaults to the `inertiaPage` Fusion context variable |
+| `id` | `string` | `"app"` | HTML `id` attribute on the mount div and `data-page` attribute on the script tag |
+| `page` | `any` | `${inertiaPage}` | The `Page` object; JSON-serialized into the script tag. Defaults to the `inertiaPage` Fusion context variable |
 
 **Usage in Fusion:**
 
@@ -435,4 +472,4 @@ body = ZktSn0w.Inertia:InertiaBody {
 body = ZktSn0w.Inertia:InertiaBody
 ```
 
-The Inertia client bootstraps by reading `document.getElementById('app').dataset.page`.
+The Inertia client reads the JSON from the `<script type="application/json">` tag to bootstrap (v3 protocol).
