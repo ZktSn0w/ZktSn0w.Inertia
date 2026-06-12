@@ -6,7 +6,9 @@ Choose your integration style: the **Trait API** for controller-centric renderin
 
 ## Versioning
 
-This package follows [Semantic Versioning](https://semver.org/). Current version: **0.3.1**
+This package follows [Semantic Versioning](https://semver.org/). Current version: **1.0.0**
+
+> **Important:** Version 1.0 targets **Inertia.js v2** (protocol v2). This adapter is not compatible with Inertia.js v1.x clients.
 
 | Increment | When |
 |---|---|
