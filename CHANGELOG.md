@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0 — 2026-06-12
+
+### Added
+- First stable release targeting Inertia.js v2 protocol
+- `data-page` attribute on mount div for initial page data delivery
+
 ## 0.3.1 — 2026-06-08
 
 ### Fixed
