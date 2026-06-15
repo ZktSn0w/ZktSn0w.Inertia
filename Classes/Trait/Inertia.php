@@ -8,7 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use ZktSn0w\Inertia\App;
 use ZktSn0w\Inertia\Factory\PageFactory;
 use ZktSn0w\Inertia\Service\SharedPropsService;
-
+use Neos\Flow\Mvc\View\ViewInterface;
 /**
  * View-agnostic Inertia trait for controllers.
  *
@@ -18,6 +18,16 @@ use ZktSn0w\Inertia\Service\SharedPropsService;
  */
 trait Inertia
 {
+    /**
+     * @var ViewInterface
+     */
+    protected $view = null;
+
+    /**
+     * @var ActionRequest
+     */
+    protected $request;
+
     private PageFactory $pageFactory;
     private SharedPropsService $sharedPropsService;
 
@@ -51,11 +61,11 @@ trait Inertia
      * Render an Inertia response.
      *
      * If the request has X-Inertia header: returns JSON response (view skipped).
-     * Otherwise: assigns the page to the view and returns null (view renders).
+     * Otherwise: assigns the page to the view, renders it, and always returns a ResponseInterface.
      *
-     * @return ResponseInterface|null  JSON response for Inertia requests, null otherwise
+     * @return ResponseInterface
      */
-    protected function inertia(string $component, array $props = []): ?ResponseInterface
+    protected function inertia(string $component, array $props = []): ResponseInterface
     {
         if (!($this->request instanceof ActionRequest)) {
             throw new \RuntimeException(sprintf(
@@ -82,6 +92,12 @@ trait Inertia
 
         $this->view->assign('inertiaPage', $page);
 
-        return null;
+        $result = $this->view->render();
+
+        if ($result instanceof ResponseInterface) {
+            return $result;
+        }
+
+        return new Response(200, [], $result);
     }
 }
