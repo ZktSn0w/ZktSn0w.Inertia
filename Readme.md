@@ -19,7 +19,6 @@ This package follows [Semantic Versioning](https://semver.org/). Current version
 ## Requirements
 
 - `neos/flow: ^9.0`
-- `neos/fusion: *` (required for Fusion API and InertiaBody prototype)
 
 ## How It Works
 
