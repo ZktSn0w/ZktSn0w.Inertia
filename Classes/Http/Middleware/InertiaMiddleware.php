@@ -31,6 +31,11 @@ final class InertiaMiddleware implements MiddlewareInterface
             return $response;
         }
 
+        $version = $this->inertiaAssetVersionService->getAssetVersion();
+        if ($version !== null) {
+            $response = $response->withHeader(App::VERSION_HEADER->value, $version);
+        }
+
         if ($response->getStatusCode() === 302 && in_array($request->getMethod(), ['PUT', 'PATCH', 'DELETE'])) {
             $response = $response->withStatus(303);
         }

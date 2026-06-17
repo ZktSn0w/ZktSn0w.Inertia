@@ -5,10 +5,14 @@
 ### Breaking
 - **Inertia.js v3 protocol.** Initial page data now delivered via `<script type="application/json">` tag instead of `data-page` attribute on the mount div
 - `InertiaBody` Fusion prototype now renders both the script tag and mount div (`Neos.Fusion:Join` instead of single `Neos.Fusion:Tag`)
+- **`inertia()` no longer returns `null`.** Calls `view->render()` and returns the rendered result. Return type: `ResponseInterface`
+- **Header logic moved to middleware.** Trait and `InertiaErrorMiddleware` no longer set protocol headers. `InertiaMiddleware` is now outermost and handles `X-Inertia`, `Content-Type`, `X-Inertia-Version` for all XHR responses (including errors)
+- **Middleware order changed.** `InertiaMiddleware` wraps `InertiaErrorMiddleware` (`position: 'after inertia'` instead of `'before inertia'`)
 - Package version jumps from 1.x to 2.x to match Inertia.js v3
 
 ### Added
 - `Page::setClearHistory()` and `Page::setEncryptHistory()` — only included in JSON output when `true` (v3 protocol)
+- `$request` and `$view` documented as trait `@property` for static analysis
 
 ## 1.0.0 — 2026-06-12
 

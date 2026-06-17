@@ -20,8 +20,9 @@ use ZktSn0w\Inertia\Service\InertiaAssetVersionService;
  * Non-Inertia requests (no X-Inertia header) pass through unchanged
  * so Flow's default exception handling (Fusion error pages, etc.) applies.
  *
- * Must be placed OUTSIDE InertiaMiddleware in the chain so it catches
- * exceptions thrown by controllers, other middleware, and InertiaMiddleware itself.
+ * Must be placed INSIDE InertiaMiddleware in the chain. InertiaMiddleware
+ * wraps it and adds protocol headers (X-Inertia, Content-Type, X-Inertia-Version)
+ * to all XHR responses — including error responses from this middleware.
  */
 final class InertiaErrorMiddleware implements MiddlewareInterface
 {
@@ -81,16 +82,7 @@ final class InertiaErrorMiddleware implements MiddlewareInterface
             $page->setVersion($version);
         }
 
-        $headers = [
-            'Content-Type' => 'application/json',
-            App::HEADER->value => 'true',
-        ];
-
-        if ($version !== null) {
-            $headers[App::VERSION_HEADER->value] = $version;
-        }
-
-        return new Response($statusCode, $headers, json_encode($page));
+        return new Response($statusCode, [], json_encode($page));
     }
 
     /**

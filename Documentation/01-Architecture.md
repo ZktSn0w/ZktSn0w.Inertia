@@ -84,17 +84,19 @@ Fusion (InertiaPage prototype)
 ### Middleware Chain
 
 ```
-InertiaErrorMiddleware (outermost)
-  ├── try/catch around entire chain
-  ├── X-Inertia present + exception → JSON error response
-  └── no X-Inertia → re-throw for Flow's default handler
-
-InertiaMiddleware
-  ├── detects X-Inertia header
-  ├── sets Content-Type: application/json for all XHR responses
+InertiaMiddleware (outermost — sets protocol headers on ALL XHR responses)
+  ├── detects X-Inertia header → pass through if absent
+  ├── calls next (InertiaErrorMiddleware → controller)
+  ├── sets X-Inertia: true, Content-Type: application/json on response
+  ├── echoes X-Inertia-Version on non-409 responses
   ├── version mismatch → 409 + X-Inertia-Location
   ├── converts 302 → 303 for mutating methods
   └── adds Vary: Accept header
+
+InertiaErrorMiddleware (inner — catches exceptions, returns bare JSON)
+  ├── try/catch around controller
+  ├── X-Inertia present + exception → JSON error response (headers enriched by InertiaMiddleware)
+  └── no X-Inertia → re-throw for Flow's default handler
 ```
 
 ## Dependency Graph

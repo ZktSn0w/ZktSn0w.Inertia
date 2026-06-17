@@ -130,7 +130,7 @@ public function process(
 
 Catches unhandled exceptions during Inertia XHR requests. Returns JSON error responses instead of exposing raw PHP stack traces to the Inertia client.
 
-Must be placed **before** `InertiaMiddleware` in the middleware chain.
+Must be placed **inside** `InertiaMiddleware` in the middleware chain (register with `position: 'after inertia'`). This ensures error responses still get protocol headers from `InertiaMiddleware`.
 
 **Configuration** (`Settings.yaml`):
 

@@ -388,12 +388,12 @@ Neos:
   Flow:
     http:
       middlewares:
-        'inertiaError':
-          position: 'before inertia'
-          middleware: 'ZktSn0w\Inertia\Http\Middleware\InertiaErrorMiddleware'
         'inertia':
           position: 'before dispatch'
           middleware: 'ZktSn0w\Inertia\Http\Middleware\InertiaMiddleware'
+        'inertiaError':
+          position: 'after inertia'
+          middleware: 'ZktSn0w\Inertia\Http\Middleware\InertiaErrorMiddleware'
 ```
 
 See [`Documentation/01-Architecture.md`](Documentation/01-Architecture.md) for the full architecture and [`Documentation/04-API-Reference.md`](Documentation/04-API-Reference.md) for all classes and prototypes.
