@@ -9,7 +9,6 @@ use Psr\Http\Message\ResponseInterface;
 use ZktSn0w\Inertia\App;
 use ZktSn0w\Inertia\Factory\PageFactory;
 use ZktSn0w\Inertia\Service\SharedPropsService;
-use Neos\Flow\Mvc\View\ViewInterface;
 /**
  * View-agnostic Inertia trait for controllers.
  *
