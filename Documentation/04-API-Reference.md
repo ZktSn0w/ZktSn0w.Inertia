@@ -23,7 +23,7 @@ The trait self-injects `PageFactory` and `SharedPropsService` via Flow's DI mech
 private function inertia(
     string $component,
     array $props = []
-): ?ResponseInterface
+): ResponseInterface
 ```
 
 | Parameter | Type | Description |
@@ -31,7 +31,7 @@ private function inertia(
 | `$component` | `string` | Frontend component name, e.g. `'Products/Show'` |
 | `$props` | `array` | Passed to the frontend component as props |
 
-**Returns:** `Psr\Http\Message\ResponseInterface|null` — JSON response for XHR, `null` for initial load (FusionView renders).
+**Returns:** `Psr\Http\Message\ResponseInterface` — JSON response for XHR, or `view->render()` result for initial load. HTTP headers (Content-Type, Vary, X-Inertia-Version) are set by `InertiaMiddleware`.
 
 **Throws:**
 - `\Exception` if `$this->request` is not set
@@ -117,8 +117,9 @@ public function process(
 1. If no `X-Inertia` request header: returns `$next->handle($request)` unchanged.
 2. Calls `$next->handle($request)`, adds `X-Inertia: true` and `Content-Type: application/json` to the response.
 3. If `GET` request with `X-Inertia-Version` header that doesn't match the current asset version: returns `409 Conflict` with `X-Inertia-Location: <request-path>`.
-4. If response is `302` and request method is `PUT`, `PATCH`, or `DELETE`: converts to `303 See Other`.
-5. Adds `Vary: Accept` to the response.
+4. Echoes `X-Inertia-Version` header with current asset version on non-409 responses.
+5. If response is `302` and request method is `PUT`, `PATCH`, or `DELETE`: converts to `303 See Other`.
+6. Adds `Vary: Accept` to the response.
 
 ---
 

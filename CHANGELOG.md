@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.0 — 2026-06-12
+
+### Breaking
+- **Inertia.js v3 protocol.** Initial page data now delivered via `<script type="application/json">` tag instead of `data-page` attribute on the mount div
+- `InertiaBody` Fusion prototype now renders both the script tag and mount div (`Neos.Fusion:Join` instead of single `Neos.Fusion:Tag`)
+- **`inertia()` no longer returns `null`.** Calls `view->render()` and returns the rendered result. Return type changed from `?ResponseInterface` to `ResponseInterface`
+- **Header logic moved to middleware.** `inertia()` no longer sets `Content-Type`, `Vary`, or `X-Inertia-Version` headers. `InertiaMiddleware` now handles all header responsibilities including echoing back the current asset version
+- Package version jumps from 1.x to 2.x to match Inertia.js v3
+
 ## 1.0.0 — 2026-06-12
 
 ### Added
