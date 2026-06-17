@@ -4,20 +4,37 @@ namespace ZktSn0w\Inertia\Trait;
 
 use GuzzleHttp\Psr7\Response;
 use Neos\Flow\Mvc\ActionRequest;
+use Neos\Flow\Mvc\View\ViewInterface;
 use Psr\Http\Message\ResponseInterface;
 use ZktSn0w\Inertia\App;
 use ZktSn0w\Inertia\Factory\PageFactory;
 use ZktSn0w\Inertia\Service\SharedPropsService;
-
+use Neos\Flow\Mvc\View\ViewInterface;
 /**
  * View-agnostic Inertia trait for controllers.
  *
- * Works with Fusion, Fluid, or any view engine.
+ * Works with Fusion, Fluid, or any view engine:
  *
  *   return $this->inertia('Dashboard', ['stats' => [...]]);
+ *
+ * Requires the host controller to have $request and $view properties
+ * (provided by ActionController).
+ *
+ * @property ActionRequest $request
+ * @property ViewInterface   $view
  */
 trait Inertia
 {
+    /**
+     * @var ViewInterface
+     */
+    protected $view = null;
+
+    /**
+     * @var ActionRequest
+     */
+    protected $request;
+
     private PageFactory $pageFactory;
     private SharedPropsService $sharedPropsService;
 
@@ -50,12 +67,14 @@ trait Inertia
     /**
      * Render an Inertia response.
      *
-     * If the request has X-Inertia header: returns JSON response (view skipped).
-     * Otherwise: assigns the page to the view and returns null (view renders).
+     * XHR (X-Inertia header present): returns JSON Response with the Page object.
+     * Full-page visit: assigns the Page to the view and calls view->render(),
+     * returning the rendered result.
      *
-     * @return ResponseInterface|null  JSON response for Inertia requests, null otherwise
+     * HTTP headers (Content-Type, Vary, X-Inertia-Version) are the middleware's
+     * responsibility — the trait only handles rendering.
      */
-    protected function inertia(string $component, array $props = []): ?ResponseInterface
+    protected function inertia(string $component, array $props = []): ResponseInterface
     {
         if (!($this->request instanceof ActionRequest)) {
             throw new \RuntimeException(sprintf(
@@ -68,20 +87,25 @@ trait Inertia
         $page = $this->pageFactory->create($component, $props, $httpRequest);
 
         if ($httpRequest->hasHeader(App::HEADER->value)) {
-            $version = $page->jsonSerialize()['version'] ?? null;
-            $headers = [
-                'Vary' => App::HEADER->value,
-                'Content-Type' => 'application/json',
-            ];
-            if ($version !== null) {
-                $headers[App::VERSION_HEADER->value] = $version;
-            }
-
-            return new Response(200, $headers, json_encode($page));
+            return new Response(200, [], json_encode($page));
         }
 
         $this->view->assign('inertiaPage', $page);
 
-        return null;
+        return $this->wrapRenderResult($this->view->render());
+    }
+
+    /**
+     * Normalize view->render() return into a ResponseInterface.
+     *
+     * render() may return ResponseInterface directly, or a string / StreamableInterface.
+     */
+    private function wrapRenderResult(mixed $result): ResponseInterface
+    {
+        if ($result instanceof ResponseInterface) {
+            return $result;
+        }
+
+        return new Response(200, [], (string) $result);
     }
 }

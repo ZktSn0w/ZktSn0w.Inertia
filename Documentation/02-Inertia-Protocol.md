@@ -32,7 +32,7 @@ Browser GET /products
   → inertia('Products/Index', [...])
   → PageFactory::create('Products/Index', [...])
   → $view->assign('inertiaPage', $page)
-  → returns null → FusionView renders
+  → calls view->render() → returns rendered result
   → Response 200, Content-Type: text/html
 ```
 
@@ -117,12 +117,15 @@ process(request, next):
                       .addHeader(X-Inertia-Location, request.uri.path)
                       ← client will reload
 
-  5. if response.status == 302 && method in [PUT, PATCH, DELETE]:
+  5. if current version is set:
+       response.addHeader(X-Inertia-Version, version)  ← echo version back to client
+
+  6. if response.status == 302 && method in [PUT, PATCH, DELETE]:
        response = response.withStatus(303)  ← browser will GET the redirect target
 
-  6. response.addHeader(Vary, 'Accept')     ← cache differentiation
+  7. response.addHeader(Vary, 'Accept')     ← cache differentiation
 
-  7. return response
+  8. return response
 ```
 
 ---
@@ -140,12 +143,11 @@ inertia(component, props):
        → sets version from InertiaAssetVersionService
        → sets url from request URI
   4. if httpRequest has X-Inertia header:
-       headers = [Content-Type: application/json, Vary: X-Inertia]
-       if page has version: headers[X-Inertia-Version] = version
-       return new Response(200, headers, json_encode(page))
+       return new Response(200, [], json_encode(page))
+       (headers set by InertiaMiddleware)
      else:
        view.assign('inertiaPage', page)
-       return null  ← FusionView renders
+       return wrapRenderResult(view.render())  ← renders full page
 ```
 
 ---

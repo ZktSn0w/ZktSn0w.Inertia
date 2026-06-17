@@ -55,7 +55,7 @@ Controller (user code)
         │     │     ├── calls InertiaAssetVersionService::getAssetVersion()
         │     │     └── returns Domain\Page
         │     ├── X-Inertia header present → returns JSON Response
-        │     └── no X-Inertia header → assigns inertiaPage to view, returns null
+        │     └── no X-Inertia header → assigns inertiaPage to view, calls view->render()
         └── injects PageFactory, SharedPropsService via Flow DI
 
 FusionView (initial load only)
@@ -91,7 +91,8 @@ InertiaErrorMiddleware (outermost)
 
 InertiaMiddleware
   ├── detects X-Inertia header
-  ├── sets Content-Type: application/json for all XHR responses
+  ├── sets Content-Type: application/json, X-Inertia: true for all XHR responses
+  ├── echoes X-Inertia-Version on non-409 responses
   ├── version mismatch → 409 + X-Inertia-Location
   ├── converts 302 → 303 for mutating methods
   └── adds Vary: Accept header

@@ -19,7 +19,6 @@ This package follows [Semantic Versioning](https://semver.org/). Current version
 ## Requirements
 
 - `neos/flow: ^9.0`
-- `neos/fusion: *` (required for Fusion API and InertiaBody prototype)
 
 ## How It Works
 
@@ -128,15 +127,15 @@ This package provides two APIs for rendering Inertia responses. Both produce the
 | **Style** | Controller-centric | Fusion-centric |
 | **Controller** | Uses `Inertia` trait, returns `inertia()` | Uses `PageFactory` directly, assigns `Page` to view |
 | **PageFactory** | Used internally by the trait | Used directly by controller |
-| **XHR JSON** | Trait returns JSON Response directly | `InertiaPage` prototype's `@process` replaces HTML with JSON |
-| **Initial load** | Trait returns null, FusionView renders | Fusion renders full Neos page |
+| **XHR JSON** | Trait returns JSON Response | `InertiaPage` prototype's `@process` replaces HTML with JSON |
+| **Initial load** | Trait assigns Page, calls `view->render()` | Fusion renders full Neos page |
 | **Best for** | Standalone controllers, simple setups | Neos CMS integration, Fusion-heavy projects |
 
 Both APIs use `PageFactory` to build `Page` objects — it's the shared core for URL detection, asset version, shared props merging, deferred prop resolution, and partial reload filtering.
 
 ### Trait API
 
-Add the `Inertia` trait to any Flow action controller. Call `inertia()` in your actions — it returns JSON for XHR requests and null for initial page loads (letting your FusionView render). The trait uses `PageFactory` internally to build the `Page` object with URL, version, shared props, and deferred prop resolution.
+Add the `Inertia` trait to any Flow action controller. Call `inertia()` in your actions — it returns a JSON Response for XHR requests, or calls `view->render()` and returns the rendered result for initial page loads. The trait uses `PageFactory` internally to build the `Page` object. HTTP headers (Content-Type, Vary, X-Inertia-Version) are handled by `InertiaMiddleware`.
 
 **Controller:**
 
