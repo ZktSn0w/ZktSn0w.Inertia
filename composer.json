@@ -2,7 +2,7 @@
     "name": "zktsn0w/inertia",
     "description": "Inertia.js server-side adapter for Neos Flow",
     "type": "neos-package",
-    "version": "2.0.0",
+    "version": "3.0.0",
     "license": "MIT",
     "authors": [
         { "name": "Dominik Strangas", "email": "dominik@oceanwave018.de" }

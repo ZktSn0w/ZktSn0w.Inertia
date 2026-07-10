@@ -27,12 +27,12 @@ class PageFactory
     protected InertiaAssetVersionService $assetVersionService;
 
     /**
-     * Create a Page from component name, raw props, and the current request.
+     * Create a fully resolved Page object from component name, raw props, and the current request.
      *
      * Raw props may contain DeferProp, Closure, or plain values.
      * The factory resolves them based on partial reload headers.
      */
-    public function create(string $component, array $props, ServerRequestInterface $httpRequest): Page
+    public function createPage(string $component, array $props, ServerRequestInterface $httpRequest): Page
     {
         $partialComponent = $httpRequest->getHeaderLine(App::PARTIAL_COMPONENT->value);
         $partialData = array_filter(explode(',', $httpRequest->getHeaderLine(App::PARTIAL_DATA->value)));
@@ -54,6 +54,16 @@ class PageFactory
         $page->setUrl((string) $httpRequest->getUri()->getPath());
 
         return $page;
+    }
+
+    /**
+     * Create the view payload array from component name, raw props, and the current request.
+     *
+     * Returns ['inertiaPage' => Page] for direct use with view->assignMultiple().
+     */
+    public function create(string $component, array $props, ServerRequestInterface $httpRequest): array
+    {
+        return ['inertiaPage' => $this->createPage($component, $props, $httpRequest)];
     }
 
     /**

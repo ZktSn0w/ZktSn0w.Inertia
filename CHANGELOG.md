@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.0 — 2026-06-30
+
+### Breaking
+- **`PageFactory::create()` now returns `array` instead of `Page`.** Returns `['inertiaPage' => $page]` for direct use with `view->assignMultiple()`
+- **New `PageFactory::createPage()` method** returns the resolved `Page` object (previous `create()` behavior). Use this for XHR/JSON responses
+- **`Inertia` trait updated** — uses `createPage()` for XHR responses, `create()` for full-page visits
+
 ## 2.0.0 — 2026-06-12
 
 ### Breaking

@@ -77,13 +77,13 @@ trait Inertia
         }
 
         $httpRequest = $this->request->getHttpRequest();
-        $page = $this->pageFactory->create($component, $props, $httpRequest);
 
         if ($httpRequest->hasHeader(App::HEADER->value)) {
+            $page = $this->pageFactory->createPage($component, $props, $httpRequest);
             return new Response(200, [], json_encode($page));
         }
 
-        $this->view->assign('inertiaPage', $page);
+        $this->view->assignMultiple($this->pageFactory->create($component, $props, $httpRequest));
 
         return $this->wrapRenderResult($this->view->render());
     }
